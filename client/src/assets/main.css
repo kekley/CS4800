@@ -1,0 +1,64 @@
+:root {
+    --bg-0: #151626;
+    --panel-bg: rgba(255, 255, 255, 0.06);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --text: #f2f2f2;
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --card-border: rgba(255, 255, 255, 0.12);
+    --primary: rgba(33, 150, 243, 0.22);
+    --primary-strong: rgba(33, 150, 243, 0.4);
+    --primary-hover: rgba(33, 150, 243, 0.27);
+    --focus-ring: rgba(137, 202, 255, 0.15);
+    --input-bg: rgba(0, 0, 0, 0.22);
+    --input-border: rgba(255, 255, 255, 0.16);
+    --button-hover: rgba(255, 255, 255, 0.18);
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    font-family: ui-sans-serif, system-ui, "Segoe UI",
+        sans-serif;
+    background: var(--bg-0);
+    color: var(--text);
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.55);
+    font-size: 0.85rem;
+    height: 1.6rem;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+.app-window {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+.left-sidebar {
+    background: var(--panel-bg);
+    height: 100%;
+    width: 20%;
+    border-right: 1px solid var(--panel-border);
+}
+
+.main-content {
+    height: 100%;
+    width: 65%;
+    border-right: 1px solid var(--panel-border);
+}
+
+.right-sidebar {
+    background: var(--panel-bg);
+    height: 100%;
+    width: 15%;
+}
