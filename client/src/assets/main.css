@@ -21,14 +21,15 @@
     flex-direction: column;
     height: 100vh;
     width: 100vw;
-    font-family: ui-sans-serif, system-ui, "Segoe UI",
-        sans-serif;
+    overflow-y: hidden;
+    font-family: "Ubuntu";
     background: var(--bg-0);
     color: var(--text);
 }
 
 .top-bar {
     display: flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
     color: var(--text);
@@ -41,7 +42,14 @@
 .app-window {
     display: flex;
     flex-direction: row;
+    flex: 1;
+}
+
+.server-sidebar {
+    background: var(--panel-bg);
     height: 100%;
+    width: 5%;
+    border-right: 1px solid var(--panel-border);
 }
 
 .left-sidebar {
@@ -52,12 +60,14 @@
 }
 
 .main-content {
-    height: 100%;
-    width: 65%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     border-right: 1px solid var(--panel-border);
 }
 
 .right-sidebar {
+    padding: 15px;
     background: var(--panel-bg);
     height: 100%;
     width: 15%;

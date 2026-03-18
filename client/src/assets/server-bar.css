@@ -1,0 +1,49 @@
+.server-bar {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.server-list {
+    flex: 1;
+    overflow-y: scroll;
+}
+
+.server-thumb {
+    width: 100%;
+    height: 10%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.user-avatar {
+    width: 100%;
+    height: 10%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile {
+    width: 55px !important;
+    height: 55px !important;
+    border-radius: 1000px;
+    border: 2px solid purple;
+}
+
+.server-img {
+    width: 55px !important;
+    height: 55px !important;
+    border-radius: 1000px;
+}
+
+.add-server {
+    width: 55px !important;
+    height: 55px !important;
+    border-radius: 1000px;
+    border: 2px dashed #d3d3d3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
