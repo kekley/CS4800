@@ -54,6 +54,7 @@
     padding: 15px;
     field-sizing: content;
     box-sizing: border-box;
+    max-height: 200px !important;
     border-radius: var(--radius);
     border: 1px solid var(--input-border);
     background: var(--input-bg);

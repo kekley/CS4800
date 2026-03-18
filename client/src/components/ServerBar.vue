@@ -16,7 +16,9 @@ let servers = [1, 2, 3, 4, 5];
         </div>
       </template>
       <div class="server-thumb">
-          <div class="add-server">+</div>
+          <div class="add-server">
+            <i class="bi bi-plus"></i>
+          </div>
         </div>
     </div>
     <div class="user-avatar">
