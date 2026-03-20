@@ -14,8 +14,8 @@ const testMessage = {
 const testReply= {
   avatarUrl:
     "https://fortune.com/img-assets/wp-content/uploads/2023/01/OpenAI-Sam-Altman-h_15241239-final.jpg",
-  user: "Freak Ass Altman",
-  text: "kill yourself",
+  user: "Sam Altman",
+  text: "hello",
   time: "1:57PM",
 };
 
@@ -26,18 +26,23 @@ const testReply= {
     <div class="messages">
       <ol class="message-list">
         <li class="message-list-item">
+          <div class="date-label">March 19th, 2026</div>
+        </li>
+        <li class="message-list-item">
           <Message :message="testMessage" :isMe="true" />
         </li>
         <li class="message-list-item">
           <Message :message="testReply" :isMe="false" />
         </li>
-
       </ol>
     </div>
     <div class="input-area">
-      <textarea class="text-input"></textarea>
-      <div class="send-button">
-
+      <textarea class="text-input send-message" placeholder="Send a message to Example Text Channel 1..."></textarea>
+      <div class="action-button">
+        <i class="bi bi-paperclip" style="font-size: 25px;"></i>
+      </div>
+      <div class="action-button">
+        <i class="bi bi-send" style="font-size: 25px;"></i>
       </div>
     </div>
   </div>
