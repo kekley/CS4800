@@ -5,12 +5,17 @@ Utility functions for authentication and authorization using Auth0.
 import requests
 from flask import jsonify, request
 from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTClaimsError
+from flask import g
 
-from constants import (
+from api.constants import (
     AUTH0_ALGORITHMS,
     AUTH0_API_IDENTIFIER,
     AUTH0_DOMAIN,
 )
+
+from api.models.user import User
+from api.flask_extensions import db
 
 
 def get_jwks():
@@ -48,14 +53,31 @@ def require_auth(f):
                 audience=AUTH0_API_IDENTIFIER,
                 issuer=f"https://{AUTH0_DOMAIN}/",
             )
-        except jwt.ExpiredSignatureError:
+        except ExpiredSignatureError:
             return jsonify({"message": "Token expired"}), 401
-        except jwt.JWTClaimsError:
+        except JWTClaimsError:
             return jsonify({"message": "Invalid claims"}), 401
         except Exception:
             return jsonify({"message": "Invalid token"}), 401
 
-        request.user = payload
+        auth0_subject = payload.get("sub")
+        if not auth0_subject:
+            return jsonify({"message": "Missing subject claim"}), 401
+
+        user = User.query.filter_by(auth0_subject=auth0_subject).first()
+        auth0_sub = payload["sub"]
+
+        if not user:
+            user = User(
+                auth0_subject=auth0_subject,
+                email="dummy email",
+            )
+
+            db.session.add(user)
+            db.session.commit()
+
+        g.user = user
+        g.jwt_payload = payload
         return f(*args, **kwargs)
 
     wrapper.__name__ = f.__name__
