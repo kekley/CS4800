@@ -4,6 +4,25 @@ import "../assets/chat-window.css";
 import { ref, computed } from "vue";
 import Message from "./Message.vue";
 
+import axios from "axios";
+import { useAuth0 } from '@auth0/auth0-vue';
+import { useApi } from '../api.js';
+
+const auth0Client = useAuth0();
+
+
+async function me() {
+
+    const api = useApi(auth0Client.getAccessTokenSilently);
+
+    const res = await api.get(`/api/me`, 
+    api);
+    console.log(res);
+    
+    return res.data;
+}
+
+
 const testMessage = {
   avatarUrl:
     "https://www.cpp.edu/sci/computer-science/img/faculty-staff/zaidi.png",
@@ -41,7 +60,7 @@ const testReply= {
       <div class="action-button">
         <i class="bi bi-paperclip" style="font-size: 25px;"></i>
       </div>
-      <div class="action-button">
+      <div class="action-button" @click="me()">
         <i class="bi bi-send" style="font-size: 25px;"></i>
       </div>
     </div>
