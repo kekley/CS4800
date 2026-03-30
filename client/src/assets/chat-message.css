@@ -2,7 +2,6 @@
     max-width: 80%;
     margin: 0;
     padding: 10px;
-    border-radius: 5px;
 }
 
 .chat-message.me {
@@ -11,7 +10,6 @@
 }
 
 .chat-message:hover {
-    background-color: var(--panel-bg);
     cursor: pointer;
 }
 

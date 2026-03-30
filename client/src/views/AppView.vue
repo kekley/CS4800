@@ -38,7 +38,7 @@ import { ref, computed } from "vue";
         </div>
 
         <div class="connection-status">
-          <p class="text-success" style="margin: 0; font-size: 18px; font-weight: 700; margin-bottom: 2px;" v-if="false">Connected to Web RTC</p>
+          <p class="text-success" style="margin: 0; font-size: 18px; font-weight: 700; margin-bottom: 2px;" v-if="true">Connected to Web RTC</p>
           <div class="overall-status">
             <div style="display: flex; align-items: center;">
               <div class="spinner-grow text-success" role="status" style="width: 12px; height: 12px; margin-right: 7px;"></div> 

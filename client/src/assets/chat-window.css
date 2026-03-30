@@ -8,7 +8,7 @@
 
 .messages {
     overflow-y: auto;
-    padding: 10px;
+    padding-top: 15px;
     flex: 1;
 }
 
@@ -32,6 +32,10 @@
 .message-list-item {
     display: flex;
     width: 100%;
+}
+
+.message-list-item:hover {
+    background: var(--panel-bg);
 }
 
 .input-area {
@@ -86,3 +90,4 @@
     outline: none;
     border-color: var(--focus-ring);
 }
+
