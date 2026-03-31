@@ -1,17 +1,20 @@
+import models
+
+from blueprints.messages.routes import messages_blueprint
+from blueprints.users.routes import users_blueprint
+from blueprints.servers.routes import servers_blueprint
+
+from constants import TEST_DB_URI
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_extensions import db
 from pusher import Pusher
 
-from api.constants import TEST_DB_URI
-from api.flask_extensions import db
-from api.blueprints.messages.routes import messages_blueprint
-from api.blueprints.users.routes import users_blueprint
 
 app = Flask(__name__)
 CORS(
     app,
     origins=[
-        "https://cloudcontain.net",
         "http://localhost:5173",
     ],
     supports_credentials=True,
@@ -22,9 +25,11 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
-app.register_blueprint(messages_blueprint, url_prefix="/api")
+app.register_blueprint(messages_blueprint, url_prefix="/messages")
 
-app.register_blueprint(users_blueprint, url_prefix="/api")
+app.register_blueprint(users_blueprint, url_prefix="/users")
+
+app.register_blueprint(servers_blueprint, url_prefix="/servers")
 
 
 @app.route("/", methods=["GET"])

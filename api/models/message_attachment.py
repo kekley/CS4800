@@ -1,5 +1,4 @@
-from api.flask_extensions import db
-from sqlalchemy.sql import func
+from flask_extensions import db
 
 
 class MessageAttachment(db.Model):

@@ -13,10 +13,9 @@ const auth0Client = useAuth0();
 
 async function me() {
 
-    const api = useApi(auth0Client.getAccessTokenSilently);
+    const api = useApi(auth0Client);
 
-    const res = await api.get(`/api/me`, 
-    api);
+    const res = await api.get(`/api/me`, api);
     console.log(res);
     
     return res.data;

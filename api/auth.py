@@ -3,19 +3,30 @@ Utility functions for authentication and authorization using Auth0.
 """
 
 import requests
-from flask import jsonify, request
-from jose import jwt
-from jose.exceptions import ExpiredSignatureError, JWTClaimsError
-from flask import g
-
-from api.constants import (
+from constants import (
     AUTH0_ALGORITHMS,
     AUTH0_API_IDENTIFIER,
     AUTH0_DOMAIN,
 )
+from flask import g, jsonify, request
+from flask_extensions import db
+from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTClaimsError
+from models.user import User
+from sqlalchemy import select
 
-from api.models.user import User
-from api.flask_extensions import db
+
+def get_user(token):
+    try:
+        res = requests.get(
+            f"https://{AUTH0_DOMAIN}/userinfo",
+            headers={"Authorization": token},
+        )
+        user_info = res.json()
+        return user_info
+    except Exception as e:
+        print(f"Failed to fetch user info from Auth0: {e}")
+        return None
 
 
 def get_jwks():
@@ -60,24 +71,28 @@ def require_auth(f):
         except Exception:
             return jsonify({"message": "Invalid token"}), 401
 
-        auth0_subject = payload.get("sub")
-        if not auth0_subject:
-            return jsonify({"message": "Missing subject claim"}), 401
-
-        user = User.query.filter_by(auth0_subject=auth0_subject).first()
-        auth0_sub = payload["sub"]
+        sub = payload.get("sub")
+        user = db.session.execute(
+            select(User).where(User.auth0_subject == sub)
+        ).scalar_one_or_none()
 
         if not user:
+            user_info = get_user(request.headers.get("Authorization", None))
+            if not user_info:
+                return jsonify({"message": "Failed to fetch user information."}), 500
+            
             user = User(
-                auth0_subject=auth0_subject,
-                email="dummy email",
+                auth0_subject=sub,
+                email=user_info["email"],
+                avatar_url=user_info["picture"],
+                displayName=f"{user_info['given_name']} {user_info['family_name']}"
             )
 
             db.session.add(user)
             db.session.commit()
 
         g.user = user
-        g.jwt_payload = payload
+        request.user = payload
         return f(*args, **kwargs)
 
     wrapper.__name__ = f.__name__

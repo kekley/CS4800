@@ -1,4 +1,4 @@
-from api.flask_extensions import db
+from flask_extensions import db
 
 
 class ServerMember(db.Model):
@@ -14,6 +14,7 @@ class ServerMember(db.Model):
         db.ForeignKey("users.id"),
         primary_key=True,
     )
+    role = db.Column(db.Integer)
 
     server = db.relationship("Server", back_populates="members")
     user = db.relationship("User", back_populates="memberships")

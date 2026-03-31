@@ -1,10 +1,9 @@
 from flask import abort
+from flask_extensions import db
+from models.channel import Channel
+from models.message import Message
+from models.server_member import ServerMember
 from sqlalchemy import select
-
-from api.flask_extensions import db
-from api.models.channel import Channel
-from api.models.message import Message
-from api.models.server_member import ServerMember
 
 
 def create_message(

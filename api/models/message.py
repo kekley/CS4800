@@ -1,4 +1,4 @@
-from api.flask_extensions import db
+from flask_extensions import db
 from sqlalchemy.sql import func
 
 
