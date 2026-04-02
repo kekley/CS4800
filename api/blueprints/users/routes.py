@@ -2,6 +2,8 @@ from auth import require_auth
 from flask import Blueprint, g, jsonify, request
 from flask_extensions import db
 
+from models.user import User
+
 users_blueprint = Blueprint("users", __name__)
 
 
@@ -22,6 +24,9 @@ def update_self():
         return jsonify({"message": "Username or Display Name is required"}), 400
     
     if username:
+        existing_user = User.query.filter_by(username=username.strip()).first()
+        if existing_user and existing_user.id != g.user.id:
+            return jsonify({"message": "User with this username already exists."}), 409
         g.user.username = username.strip()
     
     if displayName:

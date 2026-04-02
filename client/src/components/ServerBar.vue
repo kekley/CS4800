@@ -4,46 +4,62 @@ import "../assets/server-bar.css";
 import { ref, onMounted } from "vue";
 
 const props = defineProps({
-  user: {
+  servers: {
     type: Object,
+    required: true,
+  },
+  currentServer: {
+    type: String,
     required: true,
   },
 });
 
-let servers = ["A", "B", "C", "D"];
+const emit = defineEmits(['update-currentServer']);
 
 onMounted(() => {
   document.querySelectorAll('[data-bs-toggle="popover"]')
     .forEach(el => new window.bootstrap.Popover(el));
 });
 
+const selectServer = (serverId) => {
+  emit('update-currentServer', serverId);
+}
+
 </script>
 
 <template>
   <div class="server-bar">
     <div class="server-list">
-
-      <template v-if="false">
-        <template v-for="server in servers">
-          <div class="server-thumb">
-            <div class="server-icon" data-bs-custom-class="custom-popover"
+        <div class="server-thumb">
+            <div :class="{'server-icon': true, home: true, active: (this.currentServer == 'home')}" data-bs-custom-class="custom-popover"
               data-bs-toggle="popover"
               data-bs-trigger="hover focus"
-              :data-bs-content="'Example Server ' + server">
+              data-bs-content="Home"
+              @click="selectServer('home')">
+              <i class="bi bi-house"></i>
+            </div>
+        </div>
+
+        <template v-for="server in servers">
+          <div class="server-thumb">
+            <div :class="{'server-icon': true, active: (this.currentServer == server)}" data-bs-custom-class="custom-popover"
+              data-bs-toggle="popover"
+              data-bs-trigger="hover focus"
+              :data-bs-content="'Example Server ' + server"
+              @click="selectServer(server)">
               {{ server }}
             </div>
           </div>
         </template>
+
         <div class="server-thumb">
             <div class="add-server" data-bs-custom-class="custom-popover"
               data-bs-toggle="popover"
               data-bs-trigger="hover focus"
-              data-bs-content="Create or Add Server">
+              data-bs-content="Create or Join Server">
               <i class="bi bi-plus"></i>
             </div>
         </div>
-      </template>
-
     </div>
   </div>
 </template>

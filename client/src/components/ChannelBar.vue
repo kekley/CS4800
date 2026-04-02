@@ -3,6 +3,13 @@ import "../assets/channel-bar.css";
 
 import { ref, computed } from "vue";
 
+const props = defineProps({
+  currentServer: {
+    type: Object,
+    required: true,
+  },
+});
+
 let channels = [
   {
     "name": "Example Text Channel 1",
@@ -18,16 +25,21 @@ let channels = [
 
 <template>
   <div class="channel-bar">
-    <p class="label">Chat Channels</p>
-    <template v-for="channel in channels">
-      <div class="channel-thumb">
-        <span style="font-weight: 700;"><i class="bi bi-hash"></i> {{ channel.name }}</span> <br>
-        <div class="presence-indicator">
-          <div class="spinner-grow text-success" role="status"></div>
-          <p>5 members here</p>
+    <div v-if="currentServer == 'home'">
+      <p class="label">Your Invites</p>
+    </div>
+    <div v-if="currentServer != 'home'">
+      <p class="label">Chat Channels</p>
+      <template v-for="channel in channels">
+        <div class="channel-thumb">
+          <span style="font-weight: 700;"><i class="bi bi-hash"></i> {{ channel.name }}</span> <br>
+          <div class="presence-indicator">
+            <div class="spinner-grow text-success" role="status"></div>
+            <p>5 members here</p>
+          </div>
         </div>
-      </div>
-    </template>
-    <p class="label">Voice Channels</p>
+      </template>
+      <p class="label">Voice Channels</p>
+    </div>
   </div>
 </template>
