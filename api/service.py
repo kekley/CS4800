@@ -3,6 +3,7 @@ import models
 from blueprints.messages.routes import messages_blueprint
 from blueprints.users.routes import users_blueprint
 from blueprints.servers.routes import servers_blueprint
+from blueprints.channels.routes import channels_blueprint
 
 from constants import TEST_DB_URI
 from flask import Flask, jsonify
@@ -30,6 +31,8 @@ app.register_blueprint(messages_blueprint, url_prefix="/messages")
 app.register_blueprint(users_blueprint, url_prefix="/users")
 
 app.register_blueprint(servers_blueprint, url_prefix="/servers")
+
+app.register_blueprint(channels_blueprint, url_prefix="/channels")
 
 
 @app.route("/", methods=["GET"])
