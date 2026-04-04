@@ -15,6 +15,7 @@
     --radius: 0.75rem;
     --radius-lg: 1rem;
     --primary: #674ea7;
+    --secondary: #444552;
 }
 
 .custom-spinner {
@@ -177,5 +178,5 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #444552;
+    color: var(--secondary);
 }

@@ -8,6 +8,16 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
 </script>
 
 <template>
+  <!-- BEGIN Create/Join Server Modal -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background: var(--secondary); padding: 10px; color: white;">
+        test
+      </div>
+    </div>
+  </div>
+  <!-- END Create/Join Server Modal -->
+
   <div class="loading" v-if="!this.ready || this.needsUsername">
     <img :src="logo" style="width: 200px;"> <br>
 
@@ -18,9 +28,11 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
     <div v-if="this.needsUsername" style="text-align: center; width: 400px;">
       <h3 style="margin: 0;">Welcome to SmallTalk, {{ user.given_name }}!</h3>
       <p style="margin: 0; margin-top: 15px; font-size: 18px; ">We're excited you're here. We need a name to call you in order to get started.</p>
+
       <input v-model="desiredDisplayName" class="text-input" placeholder="Display Name" style="width: 100% !important; padding: 7px 10px; margin-top: 25px;" /> 
       <input v-model="desiredUsername" class="text-input" placeholder="Username" style="width: 100% !important; padding: 7px 10px; margin-top: 10px;" /> 
       <p style="margin: 0; color: red; margin-top: 15px;" v-if="this.hasUsernameError">Sorry, that username is already taken.</p>
+      
       <button class="button" style="margin-top: 25px; width: 300px;" @click="submitUsername()">Let's Go!</button>
     </div>
   </div>
@@ -31,7 +43,7 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
       <input class="text-input" placeholder="Search your messages..." style="width: 400px !important; padding: 7px 10px;" /> 
     </div>
     <div class="top-bar">
-      {{ this.currentServer }}
+      <template v-if="this.currentServer != 'home'">{{ this.currentServer }}</template>
     </div>
     <div class="app-window">
       <div style="display: flex; flex-direction: column;">
@@ -41,10 +53,13 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
             <ServerBar 
               :servers="this.userServers" 
               :currentServer="this.currentServer"
-              @update-currentServer="this.currentServer = $event" />
+              @update-currentServer="this.currentServer = $event; this.currentChannel = null" />
           </div>
           <div class="left-sidebar">
-            <ChannelBar :currentServer="this.currentServer" />
+            <ChannelBar 
+              :currentServer="this.currentServer"
+              :currentChannel="this.currentChannel"
+              @update-currentChannel="this.currentChannel = $event"/>
           </div>
         </div>
 
@@ -59,7 +74,7 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
 
 
             </div>
-          <p style="font-size: 12px; color: #d3d3d3; margin: 0;">{{ (this.ws_info.latency == null) ? '' : `${this.ws_info.latency}ms` }}</p>
+          <p style="font-size: 12px; color: #d3d3d3; margin: 0;">{{ (this.ws_info.latency == null) ? 'Pinging...' : `${this.ws_info.latency}ms` }}</p>
           </div>
         </div>
 
@@ -99,7 +114,7 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
         <div style="text-align: center;">
           <img :src="logoFlat" style="width: 250px;"> <br>
           <p style="margin: 0; font-size: 32px; font-weight: 0; margin-top: 25px;"><strong>Welcome, @{{ userInfo.username }}!</strong></p>
-          <p style="margin: 0; font-size: 28px; font-weight: 0;">Select a server to get started ({{ this.currentServer }})</p>
+          <p style="margin: 0; font-size: 28px; font-weight: 0;">Select a server to get started</p>
           
           <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; margin-top: 25px;">
             <div style="width: 150px; display: flex; justify-content: center; align-items: center;">
@@ -209,15 +224,13 @@ export default {
 
         pusher.connection.bind("connected", () => {
             this.ws_info.connectionState = 2;
-            setTimeout(() => {
-                const pingTime = Date.now();
-                const testChannel = pusher.subscribe('public-latency-test');         
-                testChannel.bind('pusher:subscription_succeeded', () => {
-                    const pongTime = Date.now();
-                    this.ws_info.latency = pongTime - pingTime;
-                    console.log(this.ws_info.latency);
-                });
-            }, 1000);
+            const pingTime = Date.now();
+            const testChannel = pusher.subscribe('public-latency-test');         
+            testChannel.bind('pusher:subscription_succeeded', () => {
+                const pongTime = Date.now();
+                this.ws_info.latency = pongTime - pingTime;
+                console.log("TEST");
+            });
         });
         pusher.connection.bind("unavailable", () => {
             this.ws_info.connectionState = 3;

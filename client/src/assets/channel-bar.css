@@ -6,6 +6,11 @@
     overflow-y: scroll;
 }
 
+.channel-bar.working {
+    align-items: center;
+    justify-content: center;
+}
+
 .channel-thumb {
     width: 100%;
     border-radius: 5px;
@@ -13,6 +18,12 @@
     background: rgba(255, 255, 255, 0.15);
     border: 2px solid transparent;
     margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.channel-thumb.active {
+    border: 2px solid var(--primary);
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15), var(--primary));
 }
 
 .presence-indicator {

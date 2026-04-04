@@ -13,7 +13,6 @@ const props = defineProps({
     required: true,
   },
 });
-
 const emit = defineEmits(['update-currentServer']);
 
 onMounted(() => {
@@ -52,7 +51,7 @@ const selectServer = (serverId) => {
           </div>
         </template>
 
-        <div class="server-thumb">
+        <div class="server-thumb" data-bs-toggle="modal" data-bs-target="#exampleModal">
             <div class="add-server" data-bs-custom-class="custom-popover"
               data-bs-toggle="popover"
               data-bs-trigger="hover focus"

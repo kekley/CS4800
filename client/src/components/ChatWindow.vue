@@ -4,6 +4,13 @@ import "../assets/chat-window.css";
 import { ref, computed } from "vue";
 import Message from "./Message.vue";
 
+const props = defineProps({
+  currentChannel: {
+    type: String,
+    required: true,
+  },
+});
+
 const testMessage = {
   avatarUrl:
     "https://www.cpp.edu/sci/computer-science/img/faculty-staff/zaidi.png",
@@ -22,7 +29,12 @@ const testReply= {
 </script>
 
 <template>
-  <div class="chat-window">
+  <div class="chat-window unselected" style="color: var(--secondary);" v-if="currentChannel == null">
+    <p style="margin: 0; font-size: 45px; margin-bottom: 5px;"><i class="bi bi-chat-right-quote"></i></p>
+    <p style="margin: 0; font-size: 20px; width: 250px; text-align: center;">Select a channel to start the conversation</p>
+  </div>
+
+  <div class="chat-window" v-if="currentChannel != null">
     <div class="messages">
       <ol class="message-list">
         <li class="message-list-item">
