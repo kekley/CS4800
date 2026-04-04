@@ -1,5 +1,9 @@
 from flask_extensions import db
 
+ROLE_OWNER = 0
+ROLE_ADMIN = 1
+ROLE_MEMBER = 2
+
 
 class ServerMember(db.Model):
     __tablename__ = "server_members"
