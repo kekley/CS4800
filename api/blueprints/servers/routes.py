@@ -50,7 +50,7 @@ def create_new_server():
         return jsonify({"message": "Name is required"}), 400
     if len(name) > 255:
         return jsonify({"message": "Name must be less than 255 characters"}), 400
-    
+
     description = (
         payload.get("description").strip()
         if "description" in payload and isinstance(payload["description"], str)
@@ -61,15 +61,16 @@ def create_new_server():
     icon_url = payload.get("iconUrl").strip() if "iconUrl" in payload else None
     if icon_url and len(icon_url) > 255:
         return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
-    
-    new_server = Server(name=name, description=description, icon_url=icon_url, owner=owner.id)
+
+    new_server = Server(
+        name=name, description=description, icon_url=icon_url, owner=owner.id
+    )
     db.session.add(new_server)
-   if icon_url and len(icon_url) > 255:
+    if icon_url and len(icon_url) > 255:
         return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
     db.session.flush()  # Flush to get the server ID for the ServerMember entry
-    db.session.refresh(owner)
     db.session.add(
-        ServerMember(server_id=new_server.id, user_id=owner.id, role="0")
+        ServerMember(server_id=new_server.id, user_id=owner.id, role=ROLE_OWNER)
     )
     db.session.commit()
     return jsonify(new_server.to_dict()), 201
@@ -79,7 +80,11 @@ def create_new_server():
 @require_auth
 def create_new_channel(server_id: int):
     payload = request.get_json()
-    name = payload.get("name").strip() if "name" in payload else None
+    name = (
+        payload.get("name").strip()
+        if "name" in payload and isinstance(payload["name"], str)
+        else None
+    )
     if not name:
         return jsonify({"message": "Name is required"}), 400
     if len(name) > 255:
@@ -104,9 +109,19 @@ def create_new_channel(server_id: int):
         )
 
     channel_count = Channel.query.filter_by(server_id=server_id).count()
-    db.session.add(Channel(name=name, server_id=server_id, position=channel_count))
+    new_channel = Channel(name=name, server_id=server_id, position=channel_count)
+    db.session.add(new_channel)
     db.session.commit()
-    return jsonify({"message": "Channel created successfully"}), 201
+    return (
+        jsonify(
+            {
+                "id": new_channel.id,
+                "name": new_channel.name,
+                "position": new_channel.position,
+            }
+        ),
+        201,
+    )
 
 
 @servers_blueprint.route("/<int:server_id>/channels", methods=["GET"])
