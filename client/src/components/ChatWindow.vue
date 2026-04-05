@@ -16,12 +16,16 @@ const props = defineProps({
   pusher: {
     type: Object,
     required: true,
-  }
+  },
 });
 </script>
 
 <template>
-  <div class="chat-window unselected" style="color: var(--secondary)" v-if="currentChannel == null">
+  <div
+    class="chat-window unselected"
+    style="color: var(--secondary)"
+    v-if="currentChannel == null"
+  >
     <p style="margin: 0; font-size: 45px; margin-bottom: 5px">
       <i class="bi bi-chat-right-quote"></i>
     </p>
@@ -44,13 +48,23 @@ const props = defineProps({
             <div class="date-label">{{ formatDay(day) }}</div>
           </li>
           <li class="message-list-item" v-for="message in messageList">
-            <Message :message="message" :isMe="(message.author.id === currentUser.id) && message.author.type != 'AGENT'" />
+            <Message
+              :message="message"
+              :isMe="
+                message.author.id === currentUser.id &&
+                message.author.type != 'AGENT'
+              "
+            />
           </li>
         </template>
       </ol>
     </div>
     <div class="input-area">
-      <textarea v-model="messageContent" class="text-input send-message" placeholder="Send a message..."></textarea>
+      <textarea
+        v-model="messageContent"
+        class="text-input send-message"
+        placeholder="Send a message..."
+      ></textarea>
       <div class="action-button">
         <i class="bi bi-paperclip" style="font-size: 25px"></i>
       </div>
@@ -61,9 +75,8 @@ const props = defineProps({
   </div>
 </template>
 
-
 <script>
-import moment from 'moment';
+import moment from "moment";
 
 export default {
   name: "ChatWindow",
@@ -77,7 +90,7 @@ export default {
       loading: false,
       messages: {},
       messageContent: null,
-      channel: null
+      channel: null,
     };
   },
   methods: {
@@ -97,42 +110,46 @@ export default {
       console.log("Fetched messages:", response);
       this.loading = false;
 
-      this.channel = this.pusher.subscribe(`chat-channel-${this.currentChannel}`);
-      this.channel.bind('new-message', (message) => {
-        const dateKey = moment(message.created_at).format('YYYY-MM-DD');
+      this.channel = this.pusher.subscribe(
+        `chat-channel-${this.currentChannel}`,
+      );
+      this.channel.bind("new-message", (message) => {
+        const dateKey = moment(message.created_at).format("YYYY-MM-DD");
         if (!this.messages[dateKey]) {
           this.messages[dateKey] = [];
         }
-        if (!this.messages[dateKey].some(m => m.id === message.id)) {
+        if (!this.messages[dateKey].some((m) => m.id === message.id)) {
           this.messages[dateKey].push(message);
         }
 
         setTimeout(() => {
-          this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+          this.$refs.messagesContainer.scrollTop =
+            this.$refs.messagesContainer.scrollHeight;
         }, 50);
-      })
+      });
 
       setTimeout(() => {
-        this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+        this.$refs.messagesContainer.scrollTop =
+          this.$refs.messagesContainer.scrollHeight;
       }, 50);
     },
     async postMessage(content, replyToMessageId = null) {
       if (this.messageContent != null) {
         let response = await this.$store.dispatch("message/postMessage", {
-          payload: { 
-            channelId: this.currentChannel, 
-            content: content, 
-            replyToMessageId: replyToMessageId 
+          payload: {
+            channelId: this.currentChannel,
+            content: content,
+            replyToMessageId: replyToMessageId,
           },
           accessToken: await this.$auth0.getAccessTokenSilently(),
         });
         if (response.status === 201) {
           const message = response.data;
-          const dateKey = moment(message.created_at).format('YYYY-MM-DD');
+          const dateKey = moment(message.created_at).format("YYYY-MM-DD");
           if (!this.messages[dateKey]) {
             this.messages[dateKey] = [];
           }
-          if (!this.messages[dateKey].some(m => m.id === message.id)) {
+          if (!this.messages[dateKey].some((m) => m.id === message.id)) {
             this.messages[dateKey].push(message);
           }
           this.messageContent = null;
@@ -141,13 +158,15 @@ export default {
         }
 
         setTimeout(() => {
-          this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+          this.$refs.messagesContainer.scrollTop =
+            this.$refs.messagesContainer.scrollHeight;
         }, 50);
       }
     },
     formatDay(dateString) {
-      return moment(dateString, 'YYYY-MM-DD').format('MMMM Do, YYYY');
+      return moment(dateString, "YYYY-MM-DD").format("MMMM Do, YYYY");
     },
   },
 };
 </script>
+

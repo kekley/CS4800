@@ -91,6 +91,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           <p style="color: red" v-if="this.createJoinModal.createError != null">
             {{ this.createJoinModal.createError }}
           </p>
+
           <button
             class="button mt-1"
             style="width: 100%"
@@ -104,6 +105,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           <p style="margin: 0" class="mb-2">
             Please enter the ID of the server you wish to join
           </p>
+
           <input
             class="text-input mb-2"
             placeholder="Server ID"
@@ -781,6 +783,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
       <div class="home-content" v-if="this.currentServer == 'home'">
         <div style="text-align: center">
           <img :src="logoFlat" style="width: 250px" /> <br />
+
           <p
             style="margin: 0; font-size: 32px; font-weight: 0; margin-top: 25px"
           >
@@ -1080,6 +1083,7 @@ export default {
         accessToken: await this.$auth0.getAccessTokenSilently(),
       });
     },
+
     async submitUsername() {
       let response = await this.$store.dispatch("user/updateUserInfo", {
         updates: {
@@ -1210,6 +1214,7 @@ export default {
 
       this.currentServerMembers.loading = false;
     },
+
     initPusherConnection() {
       Pusher.logToConsole = true;
 

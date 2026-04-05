@@ -62,35 +62,18 @@ watch(
         </div>
       </div>
 
-      <div class="server-thumb">
-        <div
-          :class="{
-            'server-icon': true,
-            home: true,
-            active: this.currentServer == 'search',
-          }"
-          data-bs-custom-class="custom-popover"
-          data-bs-toggle="popover"
-          data-bs-trigger="hover focus"
-          data-bs-content="Search"
-          @click="selectServer('search')"
-        >
-          <i class="bi bi-search"></i>
-        </div>
-      </div>
-
       <template v-for="server in servers">
         <div class="server-thumb">
           <div
             :class="{
               'server-icon': true,
-              active: this.currentServer.id == server.id,
+              active: this.currentServer == server.id,
             }"
             data-bs-custom-class="custom-popover"
             data-bs-toggle="popover"
             data-bs-trigger="hover focus"
             :data-bs-content="server.name"
-            @click="selectServer(server)"
+            @click="selectServer(server.id)"
           >
             <template v-if="server.icon_url == null">
               {{ server.name[0] }}</template
@@ -110,6 +93,18 @@ watch(
         data-bs-target="#createJoinModal"
         @click="openModal()"
       >
+        <div
+          class="add-server"
+          data-bs-custom-class="custom-popover"
+          data-bs-toggle="popover"
+          data-bs-trigger="hover focus"
+          data-bs-content="Create or Join Server"
+        >
+          <i class="bi bi-plus"></i>
+        </div>
+      </div>
+
+      <div class="server-thumb">
         <div
           class="add-server"
           data-bs-custom-class="custom-popover"

@@ -12,20 +12,34 @@ const props = defineProps({
   },
 });
 console.log("Message component received message:", props.message);
-
 </script>
 
 <template>
   <div :class="['chat-message', { me: isMe }]">
     <div class="container">
-      <img class="avatar" :src="message.author.avatar_url" v-if="message.author.type == 'USER'" />
-      <div :class="{'avatar': true, 'agent-llama': (message.author.model == 'llama3.2'), 'agent-gemma': (message.author.model == 'gemma3')}" v-if="message.author.type == 'AGENT'">
-          <i class="bi bi-stars"></i>
+      <img
+        class="avatar"
+        :src="message.author.avatar_url"
+        v-if="message.author.type == 'USER'"
+      />
+      <div
+        :class="{
+          avatar: true,
+          'agent-llama': message.author.model == 'llama3.2',
+          'agent-gemma': message.author.model == 'gemma3',
+        }"
+        v-if="message.author.type == 'AGENT'"
+      >
+        <i class="bi bi-stars"></i>
       </div>
       <div class="vertical">
         <div class="header">
-          <span class="username" v-if="message.author.type == 'USER'">{{ message.author.username }}</span>
-          <span class="username" v-if="message.author.type == 'AGENT'">{{ message.author.name }} ({{ message.author.model }})</span>
+          <span class="username" v-if="message.author.type == 'USER'">{{
+            message.author.username
+          }}</span>
+          <span class="username" v-if="message.author.type == 'AGENT'"
+            >{{ message.author.name }} ({{ message.author.model }})</span
+          >
           <span class="timestamp">{{ formatTime(message.created_at) }}</span>
         </div>
         <div class="contents">
@@ -42,14 +56,14 @@ console.log("Message component received message:", props.message);
 </template>
 
 <script>
-import moment from 'moment';
+import moment from "moment";
 
 export default {
   methods: {
     formatTime(dateString) {
-      return moment.utc(dateString).local().format('h:mm A');
+      return moment.utc(dateString).local().format("h:mm A");
     },
-  }
-}
-
+  },
+};
 </script>
+
