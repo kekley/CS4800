@@ -13,55 +13,58 @@ const props = defineProps({
     required: true,
   },
 });
-const emit = defineEmits(['update-currentServer', 'open-modal']);
+const emit = defineEmits(["update-currentServer", "open-modal"]);
 
 onMounted(() => {
-  document.querySelectorAll('[data-bs-toggle="popover"]')
-    .forEach(el => new window.bootstrap.Popover(el));
+  document
+    .querySelectorAll('[data-bs-toggle="popover"]')
+    .forEach((el) => new window.bootstrap.Popover(el));
 });
 
 const selectServer = (serverId) => {
-  emit('update-currentServer', serverId);
-}
+  emit("update-currentServer", serverId);
+};
 
 const openModal = () => {
-  emit('open-modal', true);
-}
-
+  emit("open-modal", true);
+};
 </script>
 
 <template>
   <div class="server-bar">
     <div class="server-list">
       <div class="server-thumb">
-        <div :class="{ 'server-icon': true, home: true, active: (this.currentServer == 'home') }"
-          data-bs-custom-class="custom-popover" data-bs-toggle="popover" data-bs-trigger="hover focus"
+        <div :class="{
+          'server-icon': true,
+          home: true,
+          active: this.currentServer == 'home',
+        }" data-bs-custom-class="custom-popover" data-bs-toggle="popover" data-bs-trigger="hover focus"
           data-bs-content="Home" @click="selectServer('home')">
           <i class="bi bi-house"></i>
         </div>
       </div>
 
-        <template v-for="server in servers">
-          <div class="server-thumb">
-            <div :class="{'server-icon': true, active: (this.currentServer == server)}" data-bs-custom-class="custom-popover"
-              data-bs-toggle="popover"
-              data-bs-trigger="hover focus"
-              :data-bs-content="server.name"
-              @click="selectServer(server.id)">
-              <template v-if="server.icon_url == null"> {{ server.name[0] }}</template>
-              <img :src="server.icon_url" v-if="server.icon_url != null" style="width: 100%; height: 100%; border-radius: 1000px;">
-            </div>
+      <template v-for="server in servers">
+        <div class="server-thumb">
+          <div :class="{
+            'server-icon': true,
+            active: this.currentServer == server.id,
+          }" data-bs-custom-class="custom-popover" data-bs-toggle="popover" data-bs-trigger="hover focus"
+            :data-bs-content="server.name" @click="selectServer(server.id)">
+            <template v-if="server.icon_url == null">
+              {{ server.name[0] }}</template>
+            <img :src="server.icon_url" v-if="server.icon_url != null"
+              style="width: 100%; height: 100%; border-radius: 1000px" />
           </div>
-        </template>
-
-        <div class="server-thumb" data-bs-toggle="modal" data-bs-target="#createJoinModal" @click="openModal()">
-            <div class="add-server" data-bs-custom-class="custom-popover"
-              data-bs-toggle="popover"
-              data-bs-trigger="hover focus"
-              data-bs-content="Create or Join Server">
-              <i class="bi bi-plus"></i>
-            </div>
         </div>
+      </template>
+
+      <div class="server-thumb" data-bs-toggle="modal" data-bs-target="#createJoinModal" @click="openModal()">
+        <div class="add-server" data-bs-custom-class="custom-popover" data-bs-toggle="popover"
+          data-bs-trigger="hover focus" data-bs-content="Create or Join Server">
+          <i class="bi bi-plus"></i>
+        </div>
+      </div>
 
       <div class="server-thumb">
         <div class="add-server" data-bs-custom-class="custom-popover" data-bs-toggle="popover"

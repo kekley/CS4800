@@ -11,7 +11,6 @@ const props = defineProps({
 });
 import "../assets/chat-message.css";
 
-
 console.log(JSON.stringify(props));
 </script>
 
@@ -30,7 +29,7 @@ console.log(JSON.stringify(props));
           </div>
           <span v-if="message.text" class="message-text">{{
             message.text
-          }}</span>
+            }}</span>
         </div>
       </div>
     </div>

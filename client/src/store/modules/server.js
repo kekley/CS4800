@@ -22,10 +22,10 @@ export default {
         let response = await Api().post(
           "servers/create",
           {
-            name: data.name,
-            description: data.description,
-            icon_url: data.iconUrl,
-            is_private: data.isPrivate,
+            name: data.payload.name,
+            description: data.payload.description,
+            icon_url: data.payload.iconUrl,
+            is_private: data.payload.isPrivate,
           },
           {
             headers: {
@@ -41,4 +41,3 @@ export default {
   },
   getters: {},
 };
-

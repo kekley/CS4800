@@ -18,20 +18,23 @@ const testMessage = {
   text: "Hey",
   time: "1:55PM",
 };
-const testReply= {
+const testReply = {
   avatarUrl:
     "https://fortune.com/img-assets/wp-content/uploads/2023/01/OpenAI-Sam-Altman-h_15241239-final.jpg",
   user: "Sam Altman",
   text: "hello",
   time: "1:57PM",
 };
-
 </script>
 
 <template>
-  <div class="chat-window unselected" style="color: var(--secondary);" v-if="currentChannel == null">
-    <p style="margin: 0; font-size: 45px; margin-bottom: 5px;"><i class="bi bi-chat-right-quote"></i></p>
-    <p style="margin: 0; font-size: 20px; width: 250px; text-align: center;">Select a channel to start the conversation</p>
+  <div class="chat-window unselected" style="color: var(--secondary)" v-if="currentChannel == null">
+    <p style="margin: 0; font-size: 45px; margin-bottom: 5px">
+      <i class="bi bi-chat-right-quote"></i>
+    </p>
+    <p style="margin: 0; font-size: 20px; width: 250px; text-align: center">
+      Select a channel to start the conversation
+    </p>
   </div>
 
   <div class="chat-window" v-if="currentChannel != null">
@@ -51,10 +54,10 @@ const testReply= {
     <div class="input-area">
       <textarea class="text-input send-message" placeholder="Send a message to Example Text Channel 1..."></textarea>
       <div class="action-button">
-        <i class="bi bi-paperclip" style="font-size: 25px;"></i>
+        <i class="bi bi-paperclip" style="font-size: 25px"></i>
       </div>
       <div class="action-button" @click="me()">
-        <i class="bi bi-send" style="font-size: 25px;"></i>
+        <i class="bi bi-send" style="font-size: 25px"></i>
       </div>
     </div>
   </div>
