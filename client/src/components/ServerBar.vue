@@ -16,8 +16,9 @@ const props = defineProps({
 const emit = defineEmits(["update-currentServer", "open-modal"]);
 
 const initPopovers = () => {
-  document.querySelectorAll('[data-bs-toggle="popover"]')
-    .forEach(el => new window.bootstrap.Popover(el));
+  document
+    .querySelectorAll('[data-bs-toggle="popover"]')
+    .forEach((el) => new window.bootstrap.Popover(el));
 };
 
 onMounted(() => {
@@ -25,23 +26,25 @@ onMounted(() => {
 });
 
 const selectServer = (server) => {
-  emit('update-currentServer', server);
-}
+  emit("update-currentServer", server);
+};
 
 const openModal = () => {
-  emit('open-modal', true);
-}
+  emit("open-modal", true);
+};
 
-watch(() => props.servers, async () => {
-  setTimeout(initPopovers, 100);
-}, { deep: true });
-
+watch(
+  () => props.servers,
+  async () => {
+    setTimeout(initPopovers, 100);
+  },
+  { deep: true },
+);
 </script>
 
 <template>
   <div class="server-bar">
     <div class="server-list">
-
       <div class="server-thumb">
         <div
           :class="{
@@ -81,7 +84,7 @@ watch(() => props.servers, async () => {
           <div
             :class="{
               'server-icon': true,
-              active: (this.currentServer.id == server.id),
+              active: this.currentServer.id == server.id,
             }"
             data-bs-custom-class="custom-popover"
             data-bs-toggle="popover"
