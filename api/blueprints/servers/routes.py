@@ -96,7 +96,9 @@ def create_new_server():
         return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
     db.session.flush()  # Flush to get the server ID for the ServerMember entry
     db.session.refresh(owner)
-    db.session.add(ServerMember(server_id=new_server.id, user_id=owner.id, role="0"))
+    db.session.add(
+        ServerMember(server_id=new_server.id, user_id=owner.id, role=ROLE_OWNER)
+    )
     db.session.commit()
     return jsonify(new_server.to_dict()), 201
 
