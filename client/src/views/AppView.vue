@@ -219,7 +219,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
         </div>
       </div>
       <div class="main-content" v-if="this.currentServer != 'home'">
-        <ChatWindow :currentChannel="this.currentChannel" />
+        <ChatWindow :currentChannel="this.currentChannel" :currentUser="this.userInfo" />
       </div>
       <div class="right-sidebar" v-if="this.currentServer != 'home'">
         <!-- <MemberBar :server="this.currentServer" /> -->

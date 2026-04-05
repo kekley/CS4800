@@ -4,27 +4,19 @@ import "../assets/chat-window.css";
 import { ref, computed } from "vue";
 import Message from "./Message.vue";
 
+
+
 const props = defineProps({
   currentChannel: {
     type: String,
     required: true,
   },
+  currentUser: {
+    type: Object,
+    required: true,
+  },
 });
 
-const testMessage = {
-  avatarUrl:
-    "https://www.cpp.edu/sci/computer-science/img/faculty-staff/zaidi.png",
-  user: "Hussain Zaidi",
-  text: "Hey",
-  time: "1:55PM",
-};
-const testReply = {
-  avatarUrl:
-    "https://fortune.com/img-assets/wp-content/uploads/2023/01/OpenAI-Sam-Altman-h_15241239-final.jpg",
-  user: "Sam Altman",
-  text: "hello",
-  time: "1:57PM",
-};
 </script>
 
 <template>
@@ -40,25 +32,59 @@ const testReply = {
   <div class="chat-window" v-if="currentChannel != null">
     <div class="messages">
       <ol class="message-list">
-        <li class="message-list-item">
-          <div class="date-label">March 19th, 2026</div>
-        </li>
-        <li class="message-list-item">
-          <Message :message="testMessage" :isMe="true" />
-        </li>
-        <li class="message-list-item">
-          <Message :message="testReply" :isMe="false" />
-        </li>
+        <template v-for="message in messages" :key="message.id">
+          <Message :message="message" :isMe="message.author.id === currentUser.id" />
+        </template>
+
       </ol>
     </div>
     <div class="input-area">
-      <textarea class="text-input send-message" placeholder="Send a message to Example Text Channel 1..."></textarea>
+      <textarea v-model="messageContent" class="text-input send-message" placeholder="Send a message..."></textarea>
       <div class="action-button">
         <i class="bi bi-paperclip" style="font-size: 25px"></i>
       </div>
-      <div class="action-button" @click="me()">
+      <div class="action-button" @click="postMessage(messageContent)">
         <i class="bi bi-send" style="font-size: 25px"></i>
       </div>
     </div>
   </div>
 </template>
+
+
+<script>
+export default {
+  name: "ChatWindow",
+  watch: {
+    currentChannel(newVal) {
+      this.fetchMessages(newVal);
+    },
+  },
+  data() {
+    return {
+      messages: [],
+      messageContent: "",
+    };
+  },
+  methods: {
+    async fetchMessages(channelId) {
+      let response = await this.$store.dispatch("message/fetchMessages", {
+        payload: { channelId },
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      this.messages = response.data;
+      console.log("Fetched messages:", response);
+    },
+    async postMessage(content, replyToMessageId = null) {
+      let response = await this.$store.dispatch("message/postMessage", {
+        payload: { channelId: this.currentChannel, content: content, replyToMessageId },
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      if (response.status === 201) {
+        this.fetchMessages(this.currentChannel);
+      } else {
+        console.error("Failed to post message:", response);
+      }
+    },
+  },
+};
+</script>
