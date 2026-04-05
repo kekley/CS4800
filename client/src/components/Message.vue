@@ -12,6 +12,7 @@ const props = defineProps({
   },
 });
 console.log("Message component received message:", props.message);
+import "../assets/chat-message.css";
 </script>
 
 <template>
@@ -66,4 +67,3 @@ export default {
   },
 };
 </script>
-
