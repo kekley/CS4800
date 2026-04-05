@@ -33,15 +33,13 @@ const openModal = () => {
 <template>
   <div class="server-bar">
     <div class="server-list">
-        <div class="server-thumb">
-            <div :class="{'server-icon': true, home: true, active: (this.currentServer == 'home')}" data-bs-custom-class="custom-popover"
-              data-bs-toggle="popover"
-              data-bs-trigger="hover focus"
-              data-bs-content="Home"
-              @click="selectServer('home')">
-              <i class="bi bi-house"></i>
-            </div>
+      <div class="server-thumb">
+        <div :class="{ 'server-icon': true, home: true, active: (this.currentServer == 'home') }"
+          data-bs-custom-class="custom-popover" data-bs-toggle="popover" data-bs-trigger="hover focus"
+          data-bs-content="Home" @click="selectServer('home')">
+          <i class="bi bi-house"></i>
         </div>
+      </div>
 
         <template v-for="server in servers">
           <div class="server-thumb">
@@ -64,6 +62,13 @@ const openModal = () => {
               <i class="bi bi-plus"></i>
             </div>
         </div>
+
+      <div class="server-thumb">
+        <div class="add-server" data-bs-custom-class="custom-popover" data-bs-toggle="popover"
+          data-bs-trigger="hover focus" data-bs-content="Create or Join Server">
+          <i class="bi bi-plus"></i>
+        </div>
+      </div>
     </div>
   </div>
 </template>

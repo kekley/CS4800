@@ -41,28 +41,33 @@ def list_membership_servers():
 def create_new_server():
     payload = request.get_json()
     owner = g.user
-
-    name = payload.get("name").strip() if "name" in payload else None
+    name = (
+        payload["name"].strip()
+        if "name" in payload and isinstance(payload["name"], str)
+        else None
+    )
     if not name:
         return jsonify({"message": "Name is required"}), 400
     if len(name) > 255:
         return jsonify({"message": "Name must be less than 255 characters"}), 400
     
     description = (
-        payload.get("description").strip() if "description" in payload else None
+        payload.get("description").strip()
+        if "description" in payload and isinstance(payload["description"], str)
+        else None
     )
     if description and len(description) > 255:
         return jsonify({"message": "Description must be less than 255 characters"}), 400
-    
     icon_url = payload.get("iconUrl").strip() if "iconUrl" in payload else None
     if icon_url and len(icon_url) > 255:
         return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
     
     new_server = Server(name=name, description=description, icon_url=icon_url, owner=owner.id)
     db.session.add(new_server)
-
+   if icon_url and len(icon_url) > 255:
+        return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
     db.session.flush()  # Flush to get the server ID for the ServerMember entry
-    db.session.refresh(owner)  
+    db.session.refresh(owner)
     db.session.add(
         ServerMember(server_id=new_server.id, user_id=owner.id, role="0")
     )
