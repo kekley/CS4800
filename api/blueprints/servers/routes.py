@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from sqlalchemy import select
 
 from auth import require_auth
@@ -5,8 +7,9 @@ from flask import Blueprint, g, jsonify, request
 from flask_extensions import db
 
 from models.channel import Channel
+from models.invite import Invite
 from models.server import Server
-from models.server_member import ROLE_ADMIN, ROLE_OWNER, ServerMember
+from models.server_member import ROLE_ADMIN, ROLE_MEMBER, ROLE_OWNER, ServerMember
 
 servers_blueprint = Blueprint("servers", __name__)
 
@@ -151,3 +154,63 @@ def get_channel_list(server_id: int):
     ]
 
     return jsonify(result), 200
+
+
+@servers_blueprint.route("/<int:server_id>/invite", methods=["POST"])
+@require_auth
+def create_invite(server_id: int):
+    server = Server.query.get(server_id)
+    if not server:
+        return jsonify({"message": "Server not found"}), 404
+    membership = ServerMember.query.filter_by(
+        server_id=server_id, user_id=g.user.id
+    ).first()
+    if not membership:
+        return jsonify({"message": "You are not a member of this server"}), 403
+
+    if membership.role not in [ROLE_OWNER, ROLE_ADMIN]:
+        return (
+            jsonify(
+                {
+                    "message": "You do not have permission to create invites for this server"
+                }
+            ),
+            403,
+        )
+
+    invite_code = server.generate_invite_code()
+    db.session.add(
+        Invite(
+            code=invite_code,
+            server_id=server_id,
+        )
+    )
+    db.session.commit()
+
+    return jsonify({"invite_code": invite_code}), 201
+
+
+@servers_blueprint.route("/join/<string:invite_code>", methods=["GET"])
+@require_auth
+def accept_invite(invite_code: str):
+    invite = Invite.query.filter_by(code=invite_code).first()
+    if not invite:
+        return jsonify({"message": "Invalid invite code"}), 404
+
+    server = Server.query.get(invite.server_id)
+    if not server:
+        return jsonify({"message": "Server not found"}), 404
+
+    existing_membership = ServerMember.query.filter_by(
+        server_id=server.id, user_id=g.user.id
+    ).first()
+    if existing_membership:
+        return jsonify({"message": "You are already a member of this server"}), 400
+
+    new_membership = ServerMember(
+        server_id=server.id, user_id=g.user.id, role=ROLE_MEMBER
+    )
+    db.session.add(new_membership)
+    db.session.commit()
+
+    return jsonify({"message": f"You have joined the server: '{server.name}'"}), 200
