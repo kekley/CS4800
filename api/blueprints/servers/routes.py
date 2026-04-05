@@ -65,7 +65,7 @@ def create_new_server():
     )
     if description and len(description) > 255:
         return jsonify({"message": "Description must be less than 255 characters"}), 400
-    
+
     icon_url = (
         payload["iconUrl"].strip()
         if "iconUrl" in payload and isinstance(payload["iconUrl"], str)
@@ -73,13 +73,17 @@ def create_new_server():
     )
     if icon_url and len(icon_url) > 255:
         return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
-    
+
     public = payload.get("public") if "public" in payload else False
     if public is not None and (not isinstance(payload["public"], bool)):
         return jsonify({"message": "Public must be a boolean value."}), 400
 
     new_server = Server(
-        name=name, description=description, icon_url=icon_url, owner=owner.id, public=public
+        name=name,
+        description=description,
+        icon_url=icon_url,
+        owner=owner.id,
+        public=public,
     )
     db.session.add(new_server)
     if icon_url and len(icon_url) > 255:
@@ -175,7 +179,7 @@ def create_invite(server_id: int):
     server = Server.query.get(server_id)
     if not server:
         return jsonify({"message": "Server not found"}), 404
-    
+
     membership = ServerMember.query.filter_by(
         server_id=server_id, user_id=g.user.id
     ).first()
@@ -236,15 +240,17 @@ def list_server_members(server_id: int):
     server = Server.query.get(server_id)
     if not server:
         return jsonify({"message": "Server not found"}), 404
-    
+
     membership = ServerMember.query.filter_by(
         server_id=server_id, user_id=g.user.id
     ).first()
     if not membership:
         return jsonify({"message": "You are not a member of this server"}), 403
-    
+
     rows = db.session.execute(
-        select(User.id, User.username, User.displayName, User.avatar_url, ServerMember.role)
+        select(
+            User.id, User.username, User.displayName, User.avatar_url, ServerMember.role
+        )
         .join(ServerMember, ServerMember.user_id == User.id)
         .where(ServerMember.server_id == server_id)
         .order_by(User.username.asc())
@@ -270,23 +276,25 @@ def list_server_agents(server_id: int):
     server = Server.query.get(server_id)
     if not server:
         return jsonify({"message": "Server not found"}), 404
-    
+
     membership = ServerMember.query.filter_by(
         server_id=server_id, user_id=g.user.id
     ).first()
     if not membership:
         return jsonify({"message": "You are not a member of this server"}), 403
-    
-    rows = db.session.execute(
-        select(Agent)
-        .join(AgentMember, AgentMember.agent_id == Agent.id)
-        .where(AgentMember.server_id == server_id)
-        .order_by(Agent.name.asc())
-    ).scalars().all()
 
-    result = [
-        row.to_dict()
-        for row in rows
-    ]
+    rows = (
+        db.session.execute(
+            select(Agent)
+            .join(AgentMember, AgentMember.agent_id == Agent.id)
+            .where(AgentMember.server_id == server_id)
+            .order_by(Agent.name.asc())
+        )
+        .scalars()
+        .all()
+    )
+
+    result = [row.to_dict() for row in rows]
 
     return jsonify(result), 200
+
