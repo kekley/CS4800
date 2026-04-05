@@ -180,6 +180,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+<<<<<<< HEAD
     color: var(--secondary);
 }
 
@@ -211,3 +212,4 @@
   background: var(--primary); 
   border-radius: 5px;
 }
+

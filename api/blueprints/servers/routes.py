@@ -47,7 +47,6 @@ def list_membership_servers():
 def create_new_server():
     payload = request.get_json()
     owner = g.user
-
     name = (
         payload["name"].strip()
         if "name" in payload and isinstance(payload["name"], str)
@@ -92,6 +91,12 @@ def create_new_server():
     db.session.add(
         ServerMember(server_id=new_server.id, user_id=owner.id, role=ROLE_OWNER)
     )
+    db.session.add(new_server)
+    if icon_url and len(icon_url) > 255:
+        return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
+    db.session.flush()  # Flush to get the server ID for the ServerMember entry
+    db.session.refresh(owner)
+    db.session.add(ServerMember(server_id=new_server.id, user_id=owner.id, role="0"))
     db.session.commit()
     return jsonify(new_server.to_dict()), 201
 
@@ -297,4 +302,3 @@ def list_server_agents(server_id: int):
     result = [row.to_dict() for row in rows]
 
     return jsonify(result), 200
-

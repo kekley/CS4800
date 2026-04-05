@@ -939,6 +939,14 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           <div class="spinner-border custom-spinner" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
+          <CreateServer
+            v-if="isServerCreating"
+            @serverCreated="
+              isServerCreating = false;
+              loadUserServers();
+            "
+            @serverCreateCancel="isServerCreating = false"
+          />
         </div>
       </div>
     </div>
