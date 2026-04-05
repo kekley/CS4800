@@ -355,6 +355,12 @@ export default {
             returnTo: window.location.origin,
           },
         });
+        if (response.status == 201) {
+          this.userServers.push(response.data);
+          bootstrap.Modal.getInstance(document.getElementById('createJoinModal')).hide();
+        } else {
+          this.createJoinModal.createError = response.data['message'];
+        }
       },
       ws_info: {
         connectionState: null,

@@ -1,7 +1,7 @@
 <script setup>
 import "../assets/server-bar.css";
 
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 
 const props = defineProps({
   servers: {
@@ -15,19 +15,27 @@ const props = defineProps({
 });
 const emit = defineEmits(["update-currentServer", "open-modal"]);
 
+const initPopovers = () => {
+  document.querySelectorAll('[data-bs-toggle="popover"]')
+    .forEach(el => new window.bootstrap.Popover(el));
+};
+
 onMounted(() => {
-  document
-    .querySelectorAll('[data-bs-toggle="popover"]')
-    .forEach((el) => new window.bootstrap.Popover(el));
+  initPopovers();
 });
 
-const selectServer = (serverId) => {
-  emit("update-currentServer", serverId);
-};
+const selectServer = (server) => {
+  emit('update-currentServer', server);
+}
 
 const openModal = () => {
-  emit("open-modal", true);
-};
+  emit('open-modal', true);
+}
+
+watch(() => props.servers, async () => {
+  setTimeout(initPopovers, 100);
+}, { deep: true });
+
 </script>
 
 <template>
