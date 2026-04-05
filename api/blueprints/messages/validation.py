@@ -22,5 +22,5 @@ def validate_create_message_payload(message_payload):
     return True, {
         "content": content,
         "reply_to_id": reply_to_message_id,
-        "agentId": agentId
+        "agentId": agentId,
     }
