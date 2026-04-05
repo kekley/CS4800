@@ -121,6 +121,60 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
     </div>
   </div>
   <!-- END Create/Join Server Modal -->
+  <!-- BEGIN Create Invite Modal -->
+  <div
+    class="modal fade"
+    id="createInviteModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div
+      class="modal-dialog modal-dialog-centered"
+      style="max-width: 650px !important"
+    >
+      <div
+        class="modal-content"
+        style="
+          background: var(--bg-0);
+          padding: 10px;
+          color: white;
+          font-family: &quot;Ubuntu&quot;;
+          max-width: 650px !important;
+        "
+      >
+        <div class="row mb-2">
+          <div class="slider-tab active">Create an Invite</div>
+        </div>
+
+        <div style="padding: 10px">
+          <p style="text-align: center">Invite someone to join your server!</p>
+          <p
+            style="color: red"
+            v-if="this.createInviteModal.createError != null"
+          >
+            {{ this.createInviteModal.createError }}
+          </p>
+          <div style="display: flex; flex-direction: row">
+            <button
+              class="button mt-1"
+              style="width: 100%"
+              @click="createInvite(this.currentServer)"
+            >
+              Create Invite
+            </button>
+            <button
+              class="button mt-1"
+              style="width: 100%; margin-left: 10px"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END Create Invite Modal -->
 
   <!-- BEGIN Create Invite Modal -->
   <div
@@ -373,7 +427,6 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
       </button>
     </div>
   </div>
-
   <div class="main" v-if="this.ready && !this.needsUsername">
     <div class="head-nav">
       <img :src="logo" style="width: 125px" />

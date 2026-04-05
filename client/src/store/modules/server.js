@@ -1,7 +1,6 @@
 import Api from "@/services/api";
 
 export default {
-
     namespaced: true,
     state: {},
     mutations: {},
@@ -22,74 +21,79 @@ export default {
             try {
                 let response = await Api().post(
                     "servers/create",
-                    {
-                        name: data.payload.name,
-                        description: data.payload.description,
-                        icon_url: data.payload.iconUrl,
-                        is_private: data.payload.isPrivate,
-                    },
+                    data.payload,
                     {
                         headers: {
                             Authorization: `Bearer ${data.accessToken}`,
                         },
-                        async createServer({ commit }, data) {
-                            try {
-                                let response = await Api().post('servers/create', data.payload, {
-                                    headers: {
-                                        'Authorization': `Bearer ${data.accessToken}`
-                                    }
-                                });
-                                return response;
-                            } catch (error) {
-                                return error.response;
-                            }
-                        }
                     },
-                    async joinServer({ commit }, data) {
-                    try {
-                        let response = await Api().get(
-                            `servers/join/${data.payload.inviteCode}`,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${data.accessToken}`,
-                                },
-                            },
-                        );
-                        return response;
-                    } catch(error) {
-                        return error.response;
-                    }
-                },
-                    async listServerMembers({ commit }, data) {
-                    try {
-                        let response = await Api().get(
-                            `servers/${data.serverId}/members`,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${data.accessToken}`,
-                                },
-                            },
-                        );
-                        return response;
-                    } catch(error) {
-                        return error.response;
-                    }
-                },
-                    async listServerAgents({ commit }, data) {
-                    try {
-                        let response = await Api().get(
-                            `servers/${data.serverId}/agents`,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${data.accessToken}`,
-                                },
-                            },
-                        );
-                        return response;
-                    } catch(error) {
-                        return error.response;
-                    }
-                }
+                );
+                return response;
+            } catch (error) {
+                return error.response;
+            }
+        },
+        async createInvite({ commit }, data) {
+            try {
+                let response = await Api().post(
+                    `servers/${data.payload.serverId}/invite`,
+                    null,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${data.accessToken}`,
+                        },
+                    },
+                );
+                return response;
+            } catch (error) {
+                return error.response;
+            }
+        },
+        async joinServer({ commit }, data) {
+            try {
+                let response = await Api().get(
+                    `servers/join/${data.payload.inviteCode}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${data.accessToken}`,
+                        },
+                    },
+                );
+                return response;
+            } catch (error) {
+                return error.response;
+            }
+        },
+        async listServerMembers({ commit }, data) {
+            try {
+                let response = await Api().get(
+                    `servers/${data.serverId}/members`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${data.accessToken}`,
+                        },
+                    },
+                );
+                return response;
+            } catch (error) {
+                return error.response;
+            }
+        },
+        async listServerAgents({ commit }, data) {
+            try {
+                let response = await Api().get(
+                    `servers/${data.serverId}/agents`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${data.accessToken}`,
+                        },
+                    },
+                );
+                return response;
+            } catch (error) {
+                return error.response;
+            }
+        }
     },
-            getters: { },
-        };
+    getters: {},
+}
