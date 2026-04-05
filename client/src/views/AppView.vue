@@ -80,6 +80,40 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
     </div>
   </div>
   <!-- END Create/Join Server Modal -->
+  <!-- BEGIN Create Invite Modal -->
+  <div class="modal fade" id="createInviteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 650px !important">
+      <div class="modal-content" style="
+          background: var(--bg-0);
+          padding: 10px;
+          color: white;
+          font-family: &quot;Ubuntu&quot;;
+          max-width: 650px !important;
+        ">
+        <div class="row mb-2">
+          <div class="slider-tab active">Create an Invite</div>
+        </div>
+
+        <div style="padding: 10px">
+          <p style="text-align: center;">Invite someone to join your server!</p>
+          <p style="color: red" v-if="this.createInviteModal.createError != null">
+            {{ this.createInviteModal.createError }}
+          </p>
+          <div style="display:flex; flex-direction: row">
+            <button class="button mt-1" style="width: 100%" @click="createInvite(this.currentServer)">
+              Create Invite
+            </button>
+            <button class="button mt-1" style="width: 100%; margin-left: 10px" data-bs-dismiss="modal">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END Create Invite Modal -->
+
+
 
   <div class="loading" v-if="!this.ready || this.needsUsername">
     <img :src="logo" style="width: 200px" /> <br />
@@ -106,7 +140,6 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
       </button>
     </div>
   </div>
-
   <div class="main" v-if="this.ready && !this.needsUsername">
     <div class="head-nav">
       <img :src="logo" style="width: 125px" />
@@ -223,7 +256,18 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
       </div>
       <div class="right-sidebar" v-if="this.currentServer != 'home'">
         <!-- <MemberBar :server="this.currentServer" /> -->
-        <p style="margin: 0; font-weight: 700">Members</p>
+        <div style="display:flex; flex-direction: row; padding: 10px">
+          <p style="margin: 0; font-weight: 700">Members</p>
+          <button class="button" data-bs-toggle="modal" data-bs-target="#createInviteModal" style="
+            padding: 5px 10px;
+            background-color: rgb(68, 69, 82);
+            font-size: 12px;
+          " @click="openCreateInviteModal()">
+            <i class="bi bi-plus"></i>
+          </button>
+
+        </div>
+
       </div>
       <div class="home-content" v-if="this.currentServer == 'home'">
         <div style="text-align: center">
@@ -324,6 +368,11 @@ export default {
         public: false,
         createError: null,
         joinError: null,
+      },
+      createInviteModal: {
+        expiresAfter: null,
+        maxUses: null,
+        createError: null,
       },
 
       userServers: [],
@@ -433,7 +482,36 @@ export default {
         createError: null,
       });
     },
+    openCreateInviteModal() {
+      Object.assign(this.createInviteModal, {
+        name: null,
+        expiresAfter: null,
+        maxUses: null,
+        createError: null,
+      });
+    },
+    async createInvite(serverId) {
+      let response = await this.$store.dispatch("server/createInvite", {
+        payload: {
+          serverId: serverId,
+          expiresAfter: this.createInviteModal.expiresAfter,
+          maxUses: this.createInviteModal.maxUses,
+        },
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
 
+      if (response.status && response.status != 201) {
+        this.createInviteModal.createError = response.data.message;
+      } else {
+        const inviteLink = `${window.location.origin}/invite/${response.data.invite_code}`;
+        await navigator.clipboard.writeText(inviteLink);
+        alert("Invite link copied to clipboard!");
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("createInviteModal"),
+        );
+        modal.hide();
+      }
+    },
   },
-};
+}
 </script>

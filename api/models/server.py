@@ -1,5 +1,10 @@
 from flask_extensions import db
 from sqlalchemy.sql import func
+import string
+import random
+
+
+from models.invite import Invite
 
 
 class Server(db.Model):
@@ -50,3 +55,10 @@ class Server(db.Model):
             "owner": self.owner,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+    def generate_invite_code(self):
+        characters = string.ascii_letters + string.digits
+        while True:
+            code = "".join(random.choice(characters) for _ in range(16))
+            if not db.session.query(db.exists().where(Invite.code == code)).scalar():
+                return code

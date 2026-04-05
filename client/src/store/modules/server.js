@@ -38,6 +38,27 @@ export default {
         return error.response;
       }
     },
+    async createInvite({ commit }, data) {
+      try {
+        let response = await Api().post(
+          `servers/${data.payload.serverId}/invite`,
+          {
+            name: data.payload.name,
+            expires_after: data.payload.expiresAfter,
+            max_uses: data.payload.maxUses,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${data.accessToken}`,
+            },
+          },
+        );
+        return response;
+      } catch (error) {
+        return error.response;
+      }
+    },
+
   },
   getters: {},
 };
