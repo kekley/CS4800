@@ -1,4 +1,5 @@
 import Api from "@/services/api";
+import { join } from "lodash-es";
 
 export default {
   namespaced: true,
@@ -58,7 +59,21 @@ export default {
         return error.response;
       }
     },
-
+    async joinServer({ commit }, data) {
+      try {
+        let response = await Api().get(
+          `servers/join/${data.payload.inviteCode}`,
+          {
+            headers: {
+              Authorization: `Bearer ${data.accessToken}`,
+            },
+          },
+        );
+        return response;
+      } catch (error) {
+        return error.response;
+      }
+    }
   },
   getters: {},
 };
