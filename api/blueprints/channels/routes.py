@@ -16,7 +16,7 @@ from models.user import User
 channels_blueprint = Blueprint("channels", __name__)
 
 
-def format_message(message_obj, user_obj, channel_id, agent_obj = None):
+def format_message(message_obj, user_obj, channel_id, agent_obj=None):
     res = {
         "id": message_obj.id,
         "channel_id": channel_id,
@@ -27,10 +27,7 @@ def format_message(message_obj, user_obj, channel_id, agent_obj = None):
     }
 
     if agent_obj is not None:
-        res["author"] = {
-            "type": "AGENT",
-            **agent_obj
-        }
+        res["author"] = {"type": "AGENT", **agent_obj}
     else:
         res["author"] = {
             "type": "USER",
@@ -51,11 +48,11 @@ def post_message(channel_id: int):
     ok, validated = validate_create_message_payload(payload)
     if not ok:
         return jsonify({"error": validated}), 400
-    
+
     channel = Channel.query.get(channel_id)
     if not channel:
         return jsonify({"error": "Channel not found"}), 404
-    
+
     agent = None
     if g.user == "AGENT":
         agent = Agent.query.get(int(validated["agentId"]))
@@ -82,7 +79,7 @@ def post_message(channel_id: int):
         )
     except HTTPException as exc:
         return jsonify({"error": exc.description}), exc.code
-    
+
     if g.user == "AGENT":
         result = format_message(message, g.user, channel_id, agent_obj=agent.to_dict())
     else:
@@ -90,9 +87,7 @@ def post_message(channel_id: int):
 
     # Push message to Pusher
     pusher.trigger(
-        channels=f"chat-channel-{channel_id}",
-        event_name="new-message",
-        data=result
+        channels=f"chat-channel-{channel_id}", event_name="new-message", data=result
     )
 
     if g.user == "AGENT":
@@ -106,7 +101,7 @@ def post_message(channel_id: int):
             data={
                 "agentId": int(validated["agentId"]),
                 "status": 1,
-            }
+            },
         )
 
     return jsonify(result), 201
@@ -131,13 +126,18 @@ def get_messages(channel_id: int):
 
     grouped_messages = {}
     for message in messages:
-        date_key = message.Message.created_at.date().isoformat() 
+        date_key = message.Message.created_at.date().isoformat()
 
         if date_key not in grouped_messages:
             grouped_messages[date_key] = []
-        
+
         grouped_messages[date_key].append(
-            format_message(message.Message, message.User, channel_id, agent_obj=message.Agent.to_dict() if message.Agent else None)
+            format_message(
+                message.Message,
+                message.User,
+                channel_id,
+                agent_obj=message.Agent.to_dict() if message.Agent else None,
+            )
         )
 
     sorted_messages = dict(sorted(grouped_messages.items()))
@@ -164,10 +164,15 @@ def get_recent_message(channel_id: int):
     ).all()
 
     res = [
-        format_message(message.Message, message.User, channel_id, agent_obj=message.Agent.to_dict() if message.Agent else None)
+        format_message(
+            message.Message,
+            message.User,
+            channel_id,
+            agent_obj=message.Agent.to_dict() if message.Agent else None,
+        )
         for message in messages
     ]
 
-    res = sorted(res, key=lambda x: x['created_at'])
+    res = sorted(res, key=lambda x: x["created_at"])
 
     return jsonify(res), 200

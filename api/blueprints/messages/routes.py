@@ -3,6 +3,7 @@ from blueprints.messages.services import create_message
 from blueprints.messages.validation import validate_create_message_payload
 from flask import Blueprint, g, jsonify, request
 from werkzeug.exceptions import HTTPException
+from models.channel import Channel
 
 from flask_extensions import db, pusher
 from sqlalchemy import select
@@ -26,7 +27,7 @@ def search_messages():
 
     if not search_query:
         return jsonify({"error": "Please provide a valid search query"}), 400
-    
+
     server_ids = [
         sm.server_id for sm in ServerMember.query.filter_by(user_id=g.user.id).all()
     ]
@@ -41,17 +42,19 @@ def search_messages():
         .outerjoin(Agent, Agent.id == Message.agent_id)
         .where(
             Message.channel_id.in_(channel_ids),
-            Message.content.ilike(f"%{search_query}%")
+            Message.content.ilike(f"%{search_query}%"),
         )
         .order_by(Message.created_at.desc())
     ).all()
 
     res = [
-        format_message(message.Message, message.User, message.Message.channel_id, agent_obj=message.Agent.to_dict() if message.Agent else None)
+        format_message(
+            message.Message,
+            message.User,
+            message.Message.channel_id,
+            agent_obj=message.Agent.to_dict() if message.Agent else None,
+        )
         for message in messages
     ]
 
-    return jsonify({
-        "count": len(res),
-        "results": res
-    }), 200
+    return jsonify({"count": len(res), "results": res}), 200
