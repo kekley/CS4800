@@ -9,10 +9,54 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
 
 <template>
   <!-- BEGIN Create/Join Server Modal -->
-  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="background: var(--secondary); padding: 10px; color: white;">
-        test
+  <div class="modal fade" id="createJoinModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 650px !important;">
+      <div class="modal-content" style="background: var(--bg-0); padding: 10px; color: white; font-family: 'Ubuntu'; max-width: 650px !important;">
+        
+        <div class="row mb-2">
+          <div class="col-6" style="margin: 0; padding: 0;">
+            <div :class="{'slider-tab': true, 'active': (this.createJoinModal.tab == 0)}" @click="this.createJoinModal.tab = 0">
+              Create a Server
+            </div>
+          </div>
+          <div class="col-6" style="margin: 0; padding: 0;"> 
+            <div :class="{'slider-tab': true, 'active': (this.createJoinModal.tab == 1)}" @click="this.createJoinModal.tab = 1">
+              Join a Server
+            </div>
+          </div>
+        </div>
+
+        <div v-if="this.createJoinModal.tab == 0" style="padding: 10px;">
+          <input class="text-input mb-2" v-model="this.createJoinModal.name" placeholder="Server Name" style="width: 100% !important; padding: 7px 10px;" /> 
+          <input class="text-input mb-2" v-model="this.createJoinModal.icon_url" placeholder="Icon URL" style="width: 100% !important; padding: 7px 10px;" /> 
+          <textarea class="text-input mb-2" v-model="this.createJoinModal.description" placeholder="Description" style="width: 100% !important; padding: 7px 10px;" rows="3"></textarea> 
+
+          <div class="row mb-2">
+            <div class="col-6">
+              <div class="form-check">
+                <input class="form-check-input" v-model="this.createJoinModal.public" type="checkbox" value="" id="checkDefault">
+                <label class="form-check-label" for="checkDefault">
+                  Make this server public?
+                </label>
+              </div>
+            </div>
+            <div class="col-6">
+
+            </div>
+          </div>
+
+          <p style="color: red;" v-if="this.createJoinModal.createError != null">{{ this.createJoinModal.createError }}</p>
+          <button class="button mt-1" style="width: 100%;" @click="createServer()">Create Server</button>
+        </div>
+
+        <div v-if="this.createJoinModal.tab == 1" style="padding: 10px;">
+          <p style="margin: 0;" class="mb-2">Please enter your invite code in order to join the server</p>
+          <input class="text-input mb-2" placeholder="Invite Code" style="width: 100% !important; padding: 7px 10px;" /> 
+          
+          <p style="color: red;" v-if="this.createJoinModal.joinError != null">{{ this.createJoinModal.joinError }}</p>
+          <button class="button mt-1" style="width: 100%;">Join Server</button>
+        </div>
+
       </div>
     </div>
   </div>
@@ -43,7 +87,7 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
       <input class="text-input" placeholder="Search your messages..." style="width: 400px !important; padding: 7px 10px;" /> 
     </div>
     <div class="top-bar">
-      <template v-if="this.currentServer != 'home'">{{ this.currentServer }}</template>
+      <template v-if="this.currentServer != 'home'">{{ this.currentServer.name }}</template>
     </div>
     <div class="app-window">
       <div style="display: flex; flex-direction: column;">
@@ -53,7 +97,8 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
             <ServerBar 
               :servers="this.userServers" 
               :currentServer="this.currentServer"
-              @update-currentServer="this.currentServer = $event; this.currentChannel = null" />
+              @update-currentServer="this.currentServer = $event; this.currentChannel = null;"
+              @open-modal="openCreateJoinModal()" />
           </div>
           <div class="left-sidebar">
             <ChannelBar 
@@ -138,8 +183,8 @@ import logoFlat from '../assets/images/st-logo-flat.svg';
           </div>
 
           <div style="margin-top: 25px;">
-            <button class="button" style="width: 300px; background: #444552;">Create a Server</button>
-            <button class="button" style="width: 300px; background: #444552; margin-left: 15px;">Join a Server</button>
+            <button class="button" style="width: 300px; background: #444552;" data-bs-toggle="modal" data-bs-target="#createJoinModal" @click="this.createJoinModal.tab = 0">Create a Server</button>
+            <button class="button" style="width: 300px; background: #444552; margin-left: 15px;" data-bs-toggle="modal" data-bs-target="#createJoinModal" @click="this.createJoinModal.tab = 1">Join a Server</button>
           </div>
         </div>
       </div>
@@ -165,6 +210,15 @@ export default {
             ws_info: {
               connectionState: null,
               latency: null,
+            },
+            createJoinModal: {
+              tab: 0,
+              name: null,
+              description: null,
+              icon_url: null,
+              public: false,
+              createError: null,
+              joinError: null
             },
             userServers: [],
             serverChannels: null,
@@ -197,7 +251,6 @@ export default {
         this.userServers = await this.$store.dispatch('server/listUserServers', {
           accessToken: await this.$auth0.getAccessTokenSilently()
         });
-        this.userServers = ["A", "B", "C"];
       },
       async submitUsername() {
         let response = await this.$store.dispatch('user/updateUserInfo', {
@@ -214,6 +267,17 @@ export default {
         } else {
           this.hasUsernameError = true;
         }
+      },
+      async createServer() {
+        let response = await this.$store.dispatch('server/createServer', {
+          payload: {
+            name: this.createJoinModal.name,
+            description: this.createJoinModal.description,
+            icon_url: this.createJoinModal.icon_url,
+            public: this.createJoinModal.public
+          },
+          accessToken: await this.$auth0.getAccessTokenSilently()
+        });
       },
       initPusherConnection() {
         Pusher.logToConsole = true;
@@ -234,6 +298,15 @@ export default {
         });
         pusher.connection.bind("unavailable", () => {
             this.ws_info.connectionState = 3;
+        });
+      },
+      openCreateJoinModal() {
+        Object.assign(this.createJoinModal, {
+            name: null,
+            description: null,
+            icon_url: null,
+            public: false,
+            createError: null
         });
       },
     }

@@ -13,7 +13,7 @@ const props = defineProps({
     required: true,
   },
 });
-const emit = defineEmits(['update-currentServer']);
+const emit = defineEmits(['update-currentServer', 'open-modal']);
 
 onMounted(() => {
   document.querySelectorAll('[data-bs-toggle="popover"]')
@@ -22,6 +22,10 @@ onMounted(() => {
 
 const selectServer = (serverId) => {
   emit('update-currentServer', serverId);
+}
+
+const openModal = () => {
+  emit('open-modal', true);
 }
 
 </script>
@@ -44,14 +48,15 @@ const selectServer = (serverId) => {
             <div :class="{'server-icon': true, active: (this.currentServer == server)}" data-bs-custom-class="custom-popover"
               data-bs-toggle="popover"
               data-bs-trigger="hover focus"
-              :data-bs-content="'Example Server ' + server"
-              @click="selectServer(server)">
-              {{ server }}
+              :data-bs-content="server.name"
+              @click="selectServer(server.id)">
+              <template v-if="server.icon_url == null"> {{ server.name[0] }}</template>
+              <img :src="server.icon_url" v-if="server.icon_url != null" style="width: 100%; height: 100%; border-radius: 1000px;">
             </div>
           </div>
         </template>
 
-        <div class="server-thumb" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        <div class="server-thumb" data-bs-toggle="modal" data-bs-target="#createJoinModal" @click="openModal()">
             <div class="add-server" data-bs-custom-class="custom-popover"
               data-bs-toggle="popover"
               data-bs-trigger="hover focus"

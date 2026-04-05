@@ -40,3 +40,13 @@ class Server(db.Model):
         back_populates="server",
         cascade="all, delete-orphan",
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "icon_url": self.icon_url,
+            "description": self.description,
+            "owner": self.owner,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

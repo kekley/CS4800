@@ -180,3 +180,18 @@
     align-items: center;
     color: var(--secondary);
 }
+
+.slider-tab {
+    text-align: center !important; 
+    font-size: 15px !important; 
+    color: var(--text);
+    border-bottom: 3px solid var(--secondary) !important; 
+    padding: 5px 0px 10px 0px !important; 
+    cursor: pointer;
+}
+
+.slider-tab.active {
+    font-weight: 700 !important;
+    color: var(--primary) !important;
+    border-bottom: 3px solid var(--primary) !important;
+}

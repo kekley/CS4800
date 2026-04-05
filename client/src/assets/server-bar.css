@@ -51,7 +51,7 @@
     width: 55px !important;
     height: 55px !important;
     border-radius: 1000px;
-    border: 2px dashed #d3d3d3;
+    border: 2px dashed var(--secondary);
     display: flex;
     justify-content: center;
     align-items: center;

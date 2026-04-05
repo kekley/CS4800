@@ -41,29 +41,33 @@ def list_membership_servers():
 def create_new_server():
     payload = request.get_json()
     owner = g.user
+
     name = payload.get("name").strip() if "name" in payload else None
     if not name:
         return jsonify({"message": "Name is required"}), 400
     if len(name) > 255:
         return jsonify({"message": "Name must be less than 255 characters"}), 400
+    
     description = (
         payload.get("description").strip() if "description" in payload else None
     )
     if description and len(description) > 255:
         return jsonify({"message": "Description must be less than 255 characters"}), 400
+    
     icon_url = payload.get("iconUrl").strip() if "iconUrl" in payload else None
     if icon_url and len(icon_url) > 255:
         return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
-    db.session.add(
-        Server(name=name, description=description, icon_url=icon_url, owner=owner)
-    )
+    
+    new_server = Server(name=name, description=description, icon_url=icon_url, owner=owner.id)
+    db.session.add(new_server)
+
     db.session.flush()  # Flush to get the server ID for the ServerMember entry
     db.session.refresh(owner)  
     db.session.add(
-        ServerMember(server_id=owner.owned_servers[-1].id, user_id=owner.id, role="0")
+        ServerMember(server_id=new_server.id, user_id=owner.id, role="0")
     )
     db.session.commit()
-    return jsonify({"message": "Server created successfully"}), 201
+    return jsonify(new_server.to_dict()), 201
 
 
 @servers_blueprint.route("/<int:server_id>/channels", methods=["POST"])

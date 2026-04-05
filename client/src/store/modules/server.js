@@ -19,6 +19,18 @@ export default {
                 return error.response;
             }
         },
+        async createServer({commit}, data) {
+            try {
+                let response = await Api().post('servers/create', data.payload, {
+                    headers: {
+                        'Authorization': `Bearer ${data.accessToken}`
+                    }
+                });
+                return response.data;
+            } catch(error) {
+                return error.response.data;
+            }
+        }
     },
     getters: {
     }
