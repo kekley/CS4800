@@ -20,15 +20,17 @@ def update_self():
     username = data.get("username") if "username" in data else None
     displayName = data.get("displayName") if "displayName" in data else None
 
-    if (not username or not username.strip()) and (not displayName or not displayName.strip()):
+    if (not username or not username.strip()) and (
+        not displayName or not displayName.strip()
+    ):
         return jsonify({"message": "Username or Display Name is required"}), 400
-    
+
     if username:
         existing_user = User.query.filter_by(username=username.strip()).first()
         if existing_user and existing_user.id != g.user.id:
             return jsonify({"message": "User with this username already exists."}), 409
         g.user.username = username.strip()
-    
+
     if displayName:
         g.user.displayName = displayName.strip()
 

@@ -33,6 +33,7 @@ class User(db.Model):
         "ServerMember",
         back_populates="user",
         cascade="all, delete-orphan",
+        lazy="dynamic",
     )
     messages = db.relationship(
         "Message",

@@ -16,9 +16,9 @@ def validate_create_message_payload(message_payload):
         return False, "content_too_long"
 
     if reply_to_message_id is not None and not isinstance(reply_to_message_id, int):
-        return False, "reply_to_message_id_must_be_integer"
+        return False, "reply_to_id_must_be_integer"
 
     return True, {
         "content": content,
-        "reply_to_message_id": reply_to_message_id,
+        "reply_to_id": reply_to_message_id,
     }
