@@ -22,12 +22,7 @@ export default {
       try {
         let response = await Api().post(
           "servers/create",
-          {
-            name: data.payload.name,
-            description: data.payload.description,
-            icon_url: data.payload.iconUrl,
-            is_private: data.payload.isPrivate,
-          },
+          data.payload,
           {
             headers: {
               Authorization: `Bearer ${data.accessToken}`,
@@ -63,6 +58,21 @@ export default {
       try {
         let response = await Api().get(
           `servers/join/${data.payload.inviteCode}`,
+          {
+            headers: {
+              Authorization: `Bearer ${data.accessToken}`,
+            },
+          },
+        );
+        return response;
+      } catch (error) {
+        return error.response;
+      }
+    },
+    async listServerMembers({ commit }, data) {
+      try {
+        let response = await Api().get(
+          `servers/${data.serverId}/members`,
           {
             headers: {
               Authorization: `Bearer ${data.accessToken}`,

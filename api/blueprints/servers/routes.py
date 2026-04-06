@@ -9,6 +9,7 @@ from flask_extensions import db
 from models.channel import Channel
 from models.invite import Invite
 from models.server import Server
+from models.user import User
 from models.server_member import ROLE_ADMIN, ROLE_MEMBER, ROLE_OWNER, ServerMember
 
 servers_blueprint = Blueprint("servers", __name__)
@@ -44,6 +45,7 @@ def list_membership_servers():
 def create_new_server():
     payload = request.get_json()
     owner = g.user
+
     name = (
         payload["name"].strip()
         if "name" in payload and isinstance(payload["name"], str)
@@ -61,12 +63,21 @@ def create_new_server():
     )
     if description and len(description) > 255:
         return jsonify({"message": "Description must be less than 255 characters"}), 400
-    icon_url = payload.get("iconUrl").strip() if "iconUrl" in payload else None
+    
+    icon_url = (
+        payload["iconUrl"].strip()
+        if "iconUrl" in payload and isinstance(payload["iconUrl"], str)
+        else None
+    )
     if icon_url and len(icon_url) > 255:
         return jsonify({"message": "Icon URL must be less than 255 characters"}), 400
+    
+    public = payload.get("public") if "public" in payload else False
+    if public is not None and (not isinstance(payload["public"], bool)):
+        return jsonify({"message": "Public must be a boolean value."}), 400
 
     new_server = Server(
-        name=name, description=description, icon_url=icon_url, owner=owner.id
+        name=name, description=description, icon_url=icon_url, owner=owner.id, public=public
     )
     db.session.add(new_server)
     if icon_url and len(icon_url) > 255:
@@ -162,6 +173,7 @@ def create_invite(server_id: int):
     server = Server.query.get(server_id)
     if not server:
         return jsonify({"message": "Server not found"}), 404
+    
     membership = ServerMember.query.filter_by(
         server_id=server_id, user_id=g.user.id
     ).first()
@@ -214,3 +226,37 @@ def accept_invite(invite_code: str):
     db.session.commit()
 
     return jsonify({"message": f"You have joined the server: '{server.name}'"}), 200
+
+
+@servers_blueprint.route("/<int:server_id>/members", methods=["GET"])
+@require_auth
+def list_server_members(server_id: int):
+    server = Server.query.get(server_id)
+    if not server:
+        return jsonify({"message": "Server not found"}), 404
+    
+    membership = ServerMember.query.filter_by(
+        server_id=server_id, user_id=g.user.id
+    ).first()
+    if not membership:
+        return jsonify({"message": "You are not a member of this server"}), 403
+    
+    rows = db.session.execute(
+        select(User.id, User.username, User.displayName, User.avatar_url, ServerMember.role)
+        .join(ServerMember, ServerMember.user_id == User.id)
+        .where(ServerMember.server_id == server_id)
+        .order_by(User.username.asc())
+    ).all()
+
+    result = [
+        {
+            "id": row.id,
+            "username": row.username,
+            "displayName": row.displayName,
+            "avatar_url": row.avatar_url,
+            "role": row.role,
+        }
+        for row in rows
+    ]
+
+    return jsonify(result), 200

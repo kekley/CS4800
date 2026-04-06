@@ -4,8 +4,6 @@ import { watch, ref, computed } from "vue";
 
 const emit = defineEmits(["update-currentChannel"]);
 
-let loading = ref(false);
-
 const selectChannel = (channelId) => {
   emit("update-currentChannel", channelId);
 };
@@ -19,7 +17,7 @@ const selectChannel = (channelId) => {
           background: var(--bg-0);
           padding: 10px;
           color: white;
-          font-family: &quot;Ubuntu&quot;;
+          font-family: 'Ubuntu';
           max-width: 650px !important;
         ">
         <div class="row mb-2">
@@ -32,14 +30,14 @@ const selectChannel = (channelId) => {
           <p style="color: red" v-if="this.createChannelModal.createError != null">
             {{ this.createChannelModal.createError }}
           </p>
-          <button class="button mt-1" style="width: 100%" @click="createChannel(this.currentServer)">
+          <button class="button mt-1" style="width: 100%" @click="createChannel(this.currentServer.id)">
             Create Channel
           </button>
         </div>
       </div>
     </div>
   </div>
-  <!-- END Create/Join Server Modal -->
+  <!-- END Create Channel Modal -->
 
   <div class="channel-bar working" v-if="loading">
     <div class="spinner-border custom-spinner" role="status">
@@ -49,7 +47,7 @@ const selectChannel = (channelId) => {
 
   <div class="channel-bar" v-if="!loading">
     <div v-if="currentServer == 'home'">
-      <p class="label">Your Invites</p>
+      <p class="label">Your Friends</p>
     </div>
 
     <div v-if="currentServer != 'home'">
@@ -58,16 +56,25 @@ const selectChannel = (channelId) => {
           flex-direction: row;
           align-items: center;
           justify-content: space-between;
+          margin-bottom: 10px;
         ">
         <p class="label">Chat Channels</p>
         <button class="button" data-bs-toggle="modal" data-bs-target="#createChannelModal" style="
             padding: 5px 10px;
             background-color: rgb(68, 69, 82);
             font-size: 12px;
-          " @click="openCreateChannelModal">
+          " @click="openCreateChannelModal" v-if="currentServer.role < 2">
           <i class="bi bi-plus"></i>
         </button>
       </div>
+
+      <template v-if="chatChannels.length == 0">
+        <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center;">
+          <div style="text-align: center; width: 200px; color: var(--secondary)">
+            There are no chat channels in this server
+          </div>
+        </div>
+      </template>
       <template v-for="channel in chatChannels">
         <div :class="{
           'channel-thumb': true,
@@ -81,7 +88,17 @@ const selectChannel = (channelId) => {
           </div>
         </div>
       </template>
+
       <p class="label">Voice Channels</p>
+
+      <template v-if="voiceChannels.length == 0">
+        <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center;">
+          <div style="text-align: center; width: 200px; color: var(--secondary)">
+            There are no voice channels in this server
+          </div>
+        </div>
+      </template>
+
     </div>
   </div>
 </template>
@@ -93,15 +110,17 @@ export default {
   data() {
     return {
       chatChannels: [],
+      voiceChannels: [],
       createChannelModal: {
         name: null,
         createError: null,
       },
+      loading: false,
     };
   },
   props: {
     currentServer: {
-      type: String,
+      type: Object,
       required: true,
     },
     currentChannel: {
@@ -109,11 +128,10 @@ export default {
       required: true,
     },
   },
-
   watch: {
     currentServer(newServer) {
       if (newServer !== "home") {
-        this.fetchChannels(newServer);
+        this.fetchChannels(newServer.id);
       }
     },
   },
@@ -141,6 +159,7 @@ export default {
       }
     },
     async fetchChannels(serverId) {
+      this.loading = true;
       let response = await this.$store.dispatch("channel/fetchChannels", {
         payload: {
           serverId: serverId,
@@ -152,6 +171,7 @@ export default {
       } else {
         console.error("Error fetching channels:", response);
       }
+      this.loading = false;
     },
   },
   openCreateChannelModal() {

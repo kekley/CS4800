@@ -19,6 +19,7 @@ class Server(db.Model):
     name = db.Column(db.String(255), nullable=False)
     icon_url = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
+    public = db.Column(db.Boolean, nullable=False)
     created_at = db.Column(
         db.TIMESTAMP,
         server_default=func.current_timestamp(),
@@ -53,6 +54,7 @@ class Server(db.Model):
             "icon_url": self.icon_url,
             "description": self.description,
             "owner": self.owner,
+            "public": self.public,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

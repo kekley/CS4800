@@ -1,4 +1,6 @@
 <script setup>
+import "../assets/chat-message.css";
+
 const props = defineProps({
   message: {
     type: Object,
@@ -10,7 +12,6 @@ const props = defineProps({
   },
 });
 console.log("Message component received message:", props.message);
-import "../assets/chat-message.css";
 
 </script>
 
@@ -21,7 +22,7 @@ import "../assets/chat-message.css";
       <div class="vertical">
         <div class="header">
           <span class="username">{{ message.author.username }}</span>
-          <span class="timestamp">{{ message.created_at }}</span>
+          <span class="timestamp">{{ formatTime(message.created_at) }}</span>
         </div>
         <div class="contents">
           <div v-if="message.imageUrl" class="attachment-image">
@@ -35,3 +36,16 @@ import "../assets/chat-message.css";
     </div>
   </div>
 </template>
+
+<script>
+import moment from 'moment';
+
+export default {
+  methods: {
+    formatTime(dateString) {
+      return moment.utc(dateString).local().format('h:mm A');
+    },
+  }
+}
+
+</script>

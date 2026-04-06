@@ -14,7 +14,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           background: var(--bg-0);
           padding: 10px;
           color: white;
-          font-family: &quot;Ubuntu&quot;;
+          font-family: 'Ubuntu';
           max-width: 650px !important;
         ">
         <div class="row mb-2">
@@ -67,9 +67,9 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
 
         <div v-if="this.createJoinModal.tab == 1" style="padding: 10px">
           <p style="margin: 0" class="mb-2">
-            Please enter your invite code in order to join the server
+            Please enter the ID of the server you wish to join
           </p>
-          <input class="text-input mb-2" placeholder="Invite Code" style="width: 100% !important; padding: 7px 10px" />
+          <input class="text-input mb-2" placeholder="Server ID" style="width: 100% !important; padding: 7px 10px" />
 
           <p style="color: red" v-if="this.createJoinModal.joinError != null">
             {{ this.createJoinModal.joinError }}
@@ -80,6 +80,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
     </div>
   </div>
   <!-- END Create/Join Server Modal -->
+
   <!-- BEGIN Create Invite Modal -->
   <div class="modal fade" id="createInviteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 650px !important">
@@ -87,7 +88,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           background: var(--bg-0);
           padding: 10px;
           color: white;
-          font-family: &quot;Ubuntu&quot;;
+          font-family: 'Ubuntu';
           max-width: 650px !important;
         ">
         <div class="row mb-2">
@@ -100,10 +101,10 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
             {{ this.createInviteModal.createError }}
           </p>
           <div style="display:flex; flex-direction: row">
-            <button class="button mt-1" style="width: 100%" @click="createInvite(this.currentServer)">
+            <button class="button mt-1" style="width: 100%" @click="createInvite(this.currentServer.id)">
               Create Invite
             </button>
-            <button class="button mt-1" style="width: 100%; margin-left: 10px" data-bs-dismiss="modal">
+            <button class="button mt-1" style="width: 100%; margin-left: 10px; background: var(--secondary)" data-bs-dismiss="modal">
               Cancel
             </button>
           </div>
@@ -112,8 +113,6 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
     </div>
   </div>
   <!-- END Create Invite Modal -->
-
-
 
   <div class="loading" v-if="!this.ready || this.needsUsername">
     <img :src="logo" style="width: 200px" /> <br />
@@ -140,6 +139,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
       </button>
     </div>
   </div>
+
   <div class="main" v-if="this.ready && !this.needsUsername">
     <div class="head-nav">
       <img :src="logo" style="width: 125px" />
@@ -147,19 +147,22 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
         style="width: 400px !important; padding: 7px 10px" />
     </div>
     <div class="top-bar">
-      {{this.userServers.find(s => s.id == this.currentServer)?.name || "Home"}}
+      {{this.currentServer.name || "Home"}}
     </div>
     <div class="app-window">
-      <div style="display: flex; flex-direction: column">
+      
+      <div style="display: flex; flex-direction: column;">
         <div style="
             display: flex;
             flex-direction: row;
             flex: 1;
             overflow-y: scroll;
+            overflow-x: hidden;
           ">
           <div class="server-sidebar">
             <ServerBar :servers="this.userServers" :currentServer="this.currentServer"
-              @update-currentServer="this.currentServer = $event" />
+              @update-currentServer="this.currentServer = $event; this.currentChannel = null;"
+              @open-modal="openCreateJoinModal" />
           </div>
           <div class="left-sidebar">
             <ChannelBar :currentServer="this.currentServer" :currentChannel="this.currentChannel"
@@ -251,24 +254,52 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           </div>
         </div>
       </div>
+
       <div class="main-content" v-if="this.currentServer != 'home'">
-        <ChatWindow :currentChannel="this.currentChannel" :currentUser="this.userInfo" />
+        <ChatWindow 
+          :currentChannel="this.currentChannel"
+          :currentUser="this.userInfo"
+          :pusher="this.ws_info.pusher" />
       </div>
+
       <div class="right-sidebar" v-if="this.currentServer != 'home'">
         <!-- <MemberBar :server="this.currentServer" /> -->
-        <div style="display:flex; flex-direction: row; padding: 10px">
-          <p style="margin: 0; font-weight: 700">Members</p>
-          <button class="button" data-bs-toggle="modal" data-bs-target="#createInviteModal" style="
-            padding: 5px 10px;
-            background-color: rgb(68, 69, 82);
-            font-size: 12px;
-          " @click="openCreateInviteModal()">
-            <i class="bi bi-plus"></i>
-          </button>
+        <div style="flex: 1; overflow-y: hidden; display: flex; justify-content: center; align-items: center;" v-if="this.currentServerMembers.loading">
+          <div class="spinner-border custom-spinner" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
 
+        <div style="flex: 1; overflow-y: scroll;" v-if="!this.currentServerMembers.loading">
+          <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <p style="margin: 0; font-weight: 700">Members</p>
+            <button class="button" data-bs-toggle="modal" data-bs-target="#createInviteModal" style="
+              padding: 5px 10px;
+              background-color: rgb(68, 69, 82);
+              font-size: 12px;
+            " @click="openCreateInviteModal()">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+
+          <template v-for="member in this.currentServerMembers.members">
+            <div style="display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+              <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+                <img :src="member.avatar_url" style="width: 35px; height: 35px; border-radius: 1000px;">
+                <p style="margin: 0; margin-left: 10px;">{{ member.displayName }}</p>
+              </div>
+              <p style="margin: 0;"><i class="bi bi-three-dots-vertical"></i></p>
+            </div>
+          </template>
+        
+        </div>
+
+        <div style="width: 100%;">
+          Server Settings
         </div>
 
       </div>
+
       <div class="home-content" v-if="this.currentServer == 'home'">
         <div style="text-align: center">
           <img :src="logoFlat" style="width: 250px" /> <br />
@@ -276,7 +307,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
             <strong>Welcome, @{{ userInfo.username }}!</strong>
           </p>
           <p style="margin: 0; font-size: 28px; font-weight: 0">
-            Select a server to get started ({{ this.currentServer }})
+            Select a server to get started
           </p>
 
           <div style="
@@ -365,6 +396,7 @@ export default {
       ws_info: {
         connectionState: null,
         latency: null,
+        pusher: null
       },
       createJoinModal: {
         tab: 0,
@@ -380,10 +412,13 @@ export default {
         maxUses: null,
         createError: null,
       },
-
       userServers: [],
       serverChannels: null,
       currentServer: "home",
+      currentServerMembers: {
+        loading: false,
+        members: []
+      },
       currentChannel: null,
       currentMembers: null,
       user,
@@ -398,6 +433,18 @@ export default {
     await this.loadUserServers();
     this.ready = true;
     this.initPusherConnection();
+  },
+  watch: {
+    currentServer(newServer) {
+      if (newServer !== "home") {
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+          const popover = bootstrap.Popover.getInstance(el);
+          if (popover) popover.dispose();
+        });
+
+        this.fetchServerMembers(newServer.id);
+      }
+    },
   },
   methods: {
     async loadUserInfo() {
@@ -435,8 +482,8 @@ export default {
         payload: {
           name: this.createJoinModal.name,
           description: this.createJoinModal.description,
-          icon_url: this.createJoinModal.icon_url,
-          public: this.createJoinModal.public,
+          iconUrl: this.createJoinModal.icon_url,
+          public: (this.createJoinModal.public == "true"),
         },
         accessToken: await this.$auth0.getAccessTokenSilently(),
       });
@@ -444,12 +491,8 @@ export default {
         this.createJoinModal.createError = response.data.message;
       } else {
         this.userServers.push(response.data);
-        this.currentServer = response.data.id;
-        this.createJoinModal.name = null;
-        this.createJoinModal.description = null;
-        this.createJoinModal.icon_url = null;
-        this.createJoinModal.public = false;
-        this.createJoinModal.createError = null;
+        this.userServers.sort((a, b) => a.name.localeCompare(b.name));
+        this.currentServer = response.data;
         const modal = bootstrap.Modal.getInstance(
           document.getElementById("createJoinModal"),
         );
@@ -457,25 +500,35 @@ export default {
       }
 
     },
-
+    async fetchServerMembers(serverId) {
+      this.currentServerMembers.loading = true;
+      let response = await this.$store.dispatch("server/listServerMembers", {
+        serverId: serverId,
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      if (response.status == 200) {
+        this.currentServerMembers.members = response.data;
+      }
+      this.currentServerMembers.loading = false;
+    },
     initPusherConnection() {
       Pusher.logToConsole = true;
 
-      var pusher = new Pusher("8e27f35d62403a6df5b7", {
+      this.ws_info.pusher = new Pusher(import.meta.env.VITE_PUSHER_KEY, {
         cluster: "us3",
       });
 
-      pusher.connection.bind("connected", () => {
+      this.ws_info.pusher.connection.bind("connected", () => {
         this.ws_info.connectionState = 2;
         const pingTime = Date.now();
-        const testChannel = pusher.subscribe("public-latency-test");
+        const testChannel = this.ws_info.pusher.subscribe("public-latency-test");
         testChannel.bind("pusher:subscription_succeeded", () => {
           const pongTime = Date.now();
           this.ws_info.latency = pongTime - pingTime;
           console.log("TEST");
         });
       });
-      pusher.connection.bind("unavailable", () => {
+      this.ws_info.pusher.connection.bind("unavailable", () => {
         this.ws_info.connectionState = 3;
       });
     },

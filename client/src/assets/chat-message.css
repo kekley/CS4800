@@ -15,9 +15,10 @@
 
 .container {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.75rem;
     padding: 0px 10px;
+    justify-content: center;
 }
 
 .chat-message.me .container {

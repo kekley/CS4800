@@ -6,13 +6,45 @@ from auth import require_auth
 from flask import Blueprint, g, jsonify, request
 from flask_extensions import db
 
-from models import Channel
+from models.channel import Channel
 from models.message import Message
 from blueprints.messages.services import create_message
 from blueprints.messages.validation import validate_create_message_payload
 from models.user import User
 
+from pusher import Pusher
+
+from constants import (
+    PUSHER_APP_ID, 
+    PUSHER_KEY, 
+    PUSHER_CLUSTER, 
+    PUSHER_SECRET
+)
+
 channels_blueprint = Blueprint("channels", __name__)
+
+pusher = Pusher(
+    app_id=PUSHER_APP_ID,
+    key=PUSHER_KEY,
+    secret=PUSHER_SECRET,
+    cluster=PUSHER_CLUSTER,
+    ssl=True
+)
+
+
+def format_message(message_obj, user_obj):
+    return {
+        "id": message_obj.id,
+        "content": message_obj.content,
+        "created_at": message_obj.created_at.isoformat(),
+        "author": {
+            "id": user_obj.id,
+            "username": user_obj.username,
+            "displayName": user_obj.displayName,
+            "avatar_url": user_obj.avatar_url,
+        },
+        "reply_to_id": message_obj.reply_to_id,
+    }
 
 
 @channels_blueprint.route("/<int:channel_id>/messages", methods=["POST"])
@@ -23,16 +55,19 @@ def post_message(channel_id: int):
     ok, validated = validate_create_message_payload(payload)
     if not ok:
         return jsonify({"error": validated}), 400
+    
     channel = Channel.query.get(channel_id)
     if not channel:
         return jsonify({"error": "Channel not found"}), 404
     if g.user.memberships.filter_by(server_id=channel.server_id).first() is None:
         return jsonify({"error": "You are not a member of this server"}), 403
+
     if validated["reply_to_id"]:
         parent_message = Message.query.get(validated["reply_to_id"])
         if not parent_message or parent_message.channel_id != channel_id:
             return jsonify({"error": "Invalid reply_to_id"}), 400
 
+    # Push message to DB
     try:
         message = create_message(
             channel_id=channel_id,
@@ -42,8 +77,15 @@ def post_message(channel_id: int):
         )
     except HTTPException as exc:
         return jsonify({"error": exc.description}), exc.code
+    
+    result = format_message(message, g.user)
 
-    result = message.to_dict()
+    # Push message to Pusher
+    pusher.trigger(
+        channels=f"chat-channel-{channel_id}",
+        event_name="new-message",
+        data=result
+    )
 
     return jsonify(result), 201
 
@@ -51,8 +93,6 @@ def post_message(channel_id: int):
 @channels_blueprint.route("/<int:channel_id>/messages", methods=["GET"])
 @require_auth
 def get_messages(channel_id: int):
-    from models.channel import Channel
-
     channel = Channel.query.get(channel_id)
     if not channel:
         return jsonify({"error": "Channel not found"}), 404
@@ -60,26 +100,23 @@ def get_messages(channel_id: int):
         return jsonify({"error": "You are not a member of this server"}), 403
 
     messages = db.session.execute(
-        select(Message, User.id, User.username, User.displayName, User.avatar_url)
+        select(Message, User)
         .join(User, User.id == Message.author_id)
         .where(Message.channel_id == channel_id)
         .order_by(Message.created_at.asc())
     ).all()
 
-    result = [
-        {
-            "id": message.Message.id,
-            "content": message.Message.content,
-            "created_at": message.Message.created_at.isoformat(),
-            "author": {
-                "id": message.id,
-                "username": message.username,
-                "displayName": message.displayName,
-                "avatar_url": message.avatar_url,
-            },
-            "reply_to_id": message.Message.reply_to_id,
-        }
-        for message in messages
-    ]
+    grouped_messages = {}
+    for message in messages:
+        date_key = message.Message.created_at.date().isoformat() 
 
-    return jsonify(result), 200
+        if date_key not in grouped_messages:
+            grouped_messages[date_key] = []
+        
+        grouped_messages[date_key].append(
+            format_message(message.Message, message.User)
+        )
+
+    sorted_messages = dict(sorted(grouped_messages.items()))
+
+    return jsonify(sorted_messages), 200

@@ -9,7 +9,7 @@ const props = defineProps({
     required: true,
   },
   currentServer: {
-    type: String,
+    type: Object,
     required: true,
   },
 });
@@ -63,13 +63,13 @@ watch(() => props.servers, async () => {
           <div
             :class="{
               'server-icon': true,
-              active: this.currentServer == server.id,
+              active: (this.currentServer.id == server.id),
             }"
             data-bs-custom-class="custom-popover"
             data-bs-toggle="popover"
             data-bs-trigger="hover focus"
             :data-bs-content="server.name"
-            @click="selectServer(server.id)"
+            @click="selectServer(server)"
           >
             <template v-if="server.icon_url == null">
               {{ server.name[0] }}</template
@@ -89,18 +89,6 @@ watch(() => props.servers, async () => {
         data-bs-target="#createJoinModal"
         @click="openModal()"
       >
-        <div
-          class="add-server"
-          data-bs-custom-class="custom-popover"
-          data-bs-toggle="popover"
-          data-bs-trigger="hover focus"
-          data-bs-content="Create or Join Server"
-        >
-          <i class="bi bi-plus"></i>
-        </div>
-      </div>
-
-      <div class="server-thumb">
         <div
           class="add-server"
           data-bs-custom-class="custom-popover"

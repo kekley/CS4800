@@ -85,7 +85,7 @@
 .server-sidebar {
     background: var(--panel-bg);
     height: 100%;
-    width: 5%;
+    width: 80px;
     min-width: 80px;
     border-right: 1px solid var(--panel-border);
 }
@@ -93,8 +93,8 @@
 .left-sidebar {
     background: var(--panel-bg);
     height: 100%;
-    width: 20%;
-    min-width: 350px;
+    width: 350px;
+    max-width: 350px;
     border-right: 1px solid var(--panel-border);
 }
 
@@ -156,6 +156,8 @@
     height: 100%;
     width: 15%;
     min-width: 300px;
+    display: flex;
+    flex-direction: column;
 }
 
 .profile {
@@ -195,4 +197,9 @@
     color: var(--primary) !important;
     border-bottom: 3px solid var(--primary) !important;
     color: #444552;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary); 
+  border-radius: 5px;
 }
