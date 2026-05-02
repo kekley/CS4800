@@ -199,6 +199,14 @@
     color: #444552;
 }
 
+.dropdown-item {
+    color: white !important;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
 ::-webkit-scrollbar-thumb {
   background: var(--primary); 
   border-radius: 5px;

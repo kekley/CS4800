@@ -44,7 +44,7 @@ const props = defineProps({
             <div class="date-label">{{ formatDay(day) }}</div>
           </li>
           <li class="message-list-item" v-for="message in messageList">
-            <Message :message="message" :isMe="message.author.id === currentUser.id" />
+            <Message :message="message" :isMe="(message.author.id === currentUser.id) && message.author.type != 'AGENT'" />
           </li>
         </template>
       </ol>
@@ -113,7 +113,11 @@ export default {
     async postMessage(content, replyToMessageId = null) {
       if (this.messageContent != null) {
         let response = await this.$store.dispatch("message/postMessage", {
-          payload: { channelId: this.currentChannel, content: content, replyToMessageId },
+          payload: { 
+            channelId: this.currentChannel, 
+            content: content, 
+            replyToMessageId: replyToMessageId 
+          },
           accessToken: await this.$auth0.getAccessTokenSilently(),
         });
         if (response.status === 201) {

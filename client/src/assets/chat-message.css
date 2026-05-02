@@ -34,6 +34,14 @@
     flex-shrink: 0;
 }
 
+.avatar.agent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background: linear-gradient(to top right, blue, purple);
+}
+
 .vertical {
     display: flex;
     flex-direction: column;

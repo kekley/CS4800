@@ -2,7 +2,7 @@
 import "../assets/channel-bar.css";
 import { watch, ref, computed } from "vue";
 
-const emit = defineEmits(["update-currentChannel"]);
+const emit = defineEmits(["update-currentChannel", "update-chatChannels"]);
 
 const selectChannel = (channelId) => {
   emit("update-currentChannel", channelId);
@@ -47,7 +47,7 @@ const selectChannel = (channelId) => {
 
   <div class="channel-bar" v-if="!loading">
     <div v-if="currentServer == 'home'">
-      <p class="label">Your Friends</p>
+      <p class="label">Your Agents</p>
     </div>
 
     <div v-if="currentServer != 'home'">
@@ -85,16 +85,6 @@ const selectChannel = (channelId) => {
           <div class="presence-indicator" v-if="channel.id == 10">
             <div class="spinner-grow text-success" role="status"></div>
             <p>5 members here</p>
-          </div>
-        </div>
-      </template>
-
-      <p class="label">Voice Channels</p>
-
-      <template v-if="voiceChannels.length == 0">
-        <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center;">
-          <div style="text-align: center; width: 200px; color: var(--secondary)">
-            There are no voice channels in this server
           </div>
         </div>
       </template>
@@ -168,6 +158,7 @@ export default {
       });
       if (response.status == 200) {
         this.chatChannels = response.data;
+        this.$emit("update-chatChannels", response.data);
       } else {
         console.error("Error fetching channels:", response);
       }

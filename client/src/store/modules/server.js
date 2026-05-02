@@ -1,5 +1,4 @@
 import Api from "@/services/api";
-import { join } from "lodash-es";
 
 export default {
   namespaced: true,
@@ -38,11 +37,7 @@ export default {
       try {
         let response = await Api().post(
           `servers/${data.payload.serverId}/invite`,
-          {
-            name: data.payload.name,
-            expires_after: data.payload.expiresAfter,
-            max_uses: data.payload.maxUses,
-          },
+          null,
           {
             headers: {
               Authorization: `Bearer ${data.accessToken}`,
@@ -73,6 +68,21 @@ export default {
       try {
         let response = await Api().get(
           `servers/${data.serverId}/members`,
+          {
+            headers: {
+              Authorization: `Bearer ${data.accessToken}`,
+            },
+          },
+        );
+        return response;
+      } catch (error) {
+        return error.response;
+      }
+    },
+    async listServerAgents({ commit }, data) {
+      try {
+        let response = await Api().get(
+          `servers/${data.serverId}/agents`,
           {
             headers: {
               Authorization: `Bearer ${data.accessToken}`,

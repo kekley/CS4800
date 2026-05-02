@@ -91,11 +91,28 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           font-family: 'Ubuntu';
           max-width: 650px !important;
         ">
+        
         <div class="row mb-2">
-          <div class="slider-tab active">Create an Invite</div>
+          <div class="col-6" style="margin: 0; padding: 0">
+            <div :class="{
+              'slider-tab': true,
+              active: this.createInviteModal.tab == 0,
+            }" @click="this.createInviteModal.tab = 0">
+              Invite a Friend
+            </div>
+          </div>
+          <div class="col-6" style="margin: 0; padding: 0">
+            <div :class="{
+              'slider-tab': true,
+              active: this.createInviteModal.tab == 1,
+            }" @click="this.createInviteModal.tab = 1">
+              Invite an Agent
+            </div>
+          </div>
         </div>
 
-        <div style="padding: 10px">
+        <div style="padding: 10px" v-if="this.createInviteModal.tab == 0">
+
           <p style="text-align: center;">Invite someone to join your server!</p>
           <p style="color: red" v-if="this.createInviteModal.createError != null">
             {{ this.createInviteModal.createError }}
@@ -108,7 +125,31 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
               Cancel
             </button>
           </div>
+
         </div>
+
+        <div style="padding: 10px" v-if="this.createInviteModal.tab == 1">
+
+          <input class="text-input" placeholder="Agent Name" v-model="this.createInviteModal.agentName" style="width: 100%; padding: 7px 10px" />
+
+          <select class="form-select text-input mt-2" v-model="this.createInviteModal.agentModel">
+            <option value="" selected disabled>Select a model type</option>
+            <option value="llama">Llama 3</option>
+            <option value="mistral">Mistral</option>
+            <option value="gemma">Gemma</option>
+          </select>
+
+          <div style="display:flex; flex-direction: row">
+            <button class="button mt-3" style="width: 100%" @click="createAgent()">
+              Create Agent
+            </button>
+            <button class="button mt-3" style="width: 100%; margin-left: 10px; background: var(--secondary)" data-bs-dismiss="modal">
+              Cancel
+            </button>
+          </div>
+
+        </div>
+
       </div>
     </div>
   </div>
@@ -165,20 +206,13 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
               @open-modal="openCreateJoinModal" />
           </div>
           <div class="left-sidebar">
-            <ChannelBar :currentServer="this.currentServer" :currentChannel="this.currentChannel"
-              @update-currentChannel="this.currentChannel = $event" />
+            <ChannelBar ref="channelBar" :currentServer="this.currentServer" :currentChannel="this.currentChannel"
+              @update-currentChannel="this.currentChannel = $event"
+              @update-chatChannels="this.chatChannels = $event" />
           </div>
         </div>
 
         <div class="connection-status">
-          <p class="text-success" style="
-              margin: 0;
-              font-size: 18px;
-              font-weight: 700;
-              margin-bottom: 2px;
-            " v-if="false">
-            Connected to Web RTC
-          </p>
           <div class="overall-status">
             <div style="display: flex; align-items: center">
               <div :class="{
@@ -233,25 +267,6 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
               </button>
             </div>
           </div>
-
-          <div style="display: flex; flex-direction: row">
-            <p style="
-                margin: 0;
-                font-size: 20px;
-                margin-left: 20px;
-                cursor: pointer;
-              ">
-              <i class="bi bi-mic-fill"></i>
-            </p>
-            <p style="
-                margin: 0;
-                font-size: 20px;
-                margin-left: 20px;
-                cursor: pointer;
-              ">
-              <i class="bi bi-volume-up-fill"></i>
-            </p>
-          </div>
         </div>
       </div>
 
@@ -271,13 +286,14 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
         </div>
 
         <div style="flex: 1; overflow-y: scroll;" v-if="!this.currentServerMembers.loading">
+          
           <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 10px;">
             <p style="margin: 0; font-weight: 700">Members</p>
             <button class="button" data-bs-toggle="modal" data-bs-target="#createInviteModal" style="
               padding: 5px 10px;
               background-color: rgb(68, 69, 82);
               font-size: 12px;
-            " @click="openCreateInviteModal()">
+            " @click="openCreateInviteModal(0)">
               <i class="bi bi-plus"></i>
             </button>
           </div>
@@ -285,10 +301,49 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           <template v-for="member in this.currentServerMembers.members">
             <div style="display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 15px; align-items: center;">
               <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
-                <img :src="member.avatar_url" style="width: 35px; height: 35px; border-radius: 1000px;">
-                <p style="margin: 0; margin-left: 10px;">{{ member.displayName }}</p>
+                <img :src="member.avatar_url" class="avatar">
+                <p style="margin: 0; margin-left: 15px;">{{ member.displayName }}</p>
               </div>
               <p style="margin: 0;"><i class="bi bi-three-dots-vertical"></i></p>
+            </div>
+          </template>
+
+          <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <p style="margin: 0; font-weight: 700">Agents</p>
+            <button class="button" data-bs-toggle="modal" data-bs-target="#createInviteModal" style="
+              padding: 5px 10px;
+              background-color: rgb(68, 69, 82);
+              font-size: 12px;
+            " @click="openCreateInviteModal(1)">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+
+          <template v-for="agent in this.currentServerMembers.agents">
+            <div style="display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+              <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+                <div class="avatar agent" v-if="[1, 3].includes(agent.status)">
+                    <i class="bi bi-stars"></i>
+                </div>
+                <div class="spinner-border custom-spinner" v-if="[0, 2].includes(agent.status)">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <div style="margin-left: 15px;">
+                  <p style="margin: 0;">{{ agent.name }} ({{ agent.model }})</p>
+                  <p style="margin: 0; font-size: 12px;" v-if="agent.status == 0">Initializing...</p>
+                  <p style="margin: 0; font-size: 12px; color: green;" v-if="agent.status == 1">Ready</p>
+                  <p style="margin: 0; font-size: 12px;" v-if="agent.status == 2">Typing in {{ getTypingChannel(agent.typingIn) }}...</p>
+                  <p style="margin: 0; font-size: 12px;" v-if="agent.status == 3">Sleeping</p>
+                </div>
+              </div>
+              <div class="dropdown">
+                <p role="button" data-bs-toggle="dropdown" aria-expanded="false" style="margin: 0;" v-if="agent.user_id == this.userInfo.id"><i class="bi bi-three-dots-vertical"></i></p>
+
+                <ul class="dropdown-menu" style="width: 300px; background: #151626; border: 2px solid rgba(255, 255, 255, 0.12);">
+                  <li><a class="dropdown-item" v-if="agent.status == 3" @click="wakeAgent(agent.id)">Wake agent</a></li>
+                  <li><a class="dropdown-item" style="color: #BB2D3C !important;" v-if="agent.status != 3" @click="sleepAgent(agent.id)">Send agent to sleep</a></li>
+                </ul>
+              </div>
             </div>
           </template>
         
@@ -337,7 +392,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
               ">
               <div>
                 <p style="margin: 0; color: #674ea7; font-size: 45px">0</p>
-                <p>friend(s)</p>
+                <p>agent(s)</p>
               </div>
             </div>
             <div style="
@@ -398,6 +453,7 @@ export default {
         latency: null,
         pusher: null
       },
+      agent_control: null,
       createJoinModal: {
         tab: 0,
         name: null,
@@ -408,19 +464,20 @@ export default {
         joinError: null,
       },
       createInviteModal: {
-        expiresAfter: null,
-        maxUses: null,
         createError: null,
+        agentName: null,
+        agentModel: null,
+        tab: 0,
       },
       userServers: [],
-      serverChannels: null,
+      chatChannels: [],
       currentServer: "home",
       currentServerMembers: {
         loading: false,
-        members: []
+        members: [],
+        agents: []
       },
       currentChannel: null,
-      currentMembers: null,
       user,
       userInfo: null,
       needsUsername: false,
@@ -437,11 +494,6 @@ export default {
   watch: {
     currentServer(newServer) {
       if (newServer !== "home") {
-        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
-          const popover = bootstrap.Popover.getInstance(el);
-          if (popover) popover.dispose();
-        });
-
         this.fetchServerMembers(newServer.id);
       }
     },
@@ -500,15 +552,56 @@ export default {
       }
 
     },
+    async createAgent() {
+      let response = await this.$store.dispatch("agent/createAgent", {
+        serverId: this.currentServer.id,
+        payload: {
+          name: this.createInviteModal.agentName,
+          model: this.createInviteModal.agentModel,
+        },
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      if (response.status && response.status != 201) {
+        this.createJoinModal.createError = response.data.message;
+      } else {
+        this.currentServerMembers.agents.push(response.data);
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("createInviteModal"),
+        );
+        modal.hide();
+      }
+    },
+    async wakeAgent(agentId) {
+      await this.$store.dispatch("agent/wakeAgent", {
+        agentId: agentId,
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+    },
+    async sleepAgent(agentId) {
+      await this.$store.dispatch("agent/sleepAgent", {
+        agentId: agentId,
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+    },
     async fetchServerMembers(serverId) {
       this.currentServerMembers.loading = true;
-      let response = await this.$store.dispatch("server/listServerMembers", {
+      
+      let member_response = await this.$store.dispatch("server/listServerMembers", {
         serverId: serverId,
         accessToken: await this.$auth0.getAccessTokenSilently(),
       });
-      if (response.status == 200) {
-        this.currentServerMembers.members = response.data;
+      if (member_response.status == 200) {
+        this.currentServerMembers.members = member_response.data;
       }
+
+      let agent_response = await this.$store.dispatch("server/listServerAgents", {
+        serverId: serverId,
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      if (agent_response.status == 200) {
+        this.currentServerMembers.agents = agent_response.data;
+      }   
+
       this.currentServerMembers.loading = false;
     },
     initPusherConnection() {
@@ -525,11 +618,21 @@ export default {
         testChannel.bind("pusher:subscription_succeeded", () => {
           const pongTime = Date.now();
           this.ws_info.latency = pongTime - pingTime;
-          console.log("TEST");
         });
       });
       this.ws_info.pusher.connection.bind("unavailable", () => {
         this.ws_info.connectionState = 3;
+      });
+
+      this.agent_control = this.ws_info.pusher.subscribe("agent-control");
+      this.agent_control.bind('status-change', (data) => {
+        const agent = this.currentServerMembers.agents.find(obj => obj.id === data.agentId);
+        if (agent != null) {
+          agent.status = data.status;
+          if ("typingIn" in data) {
+            agent.typingIn = data.typingIn;
+          }
+        }
       });
     },
     openCreateJoinModal() {
@@ -539,22 +642,23 @@ export default {
         icon_url: null,
         public: false,
         createError: null,
+        tab: 0,
       });
     },
-    openCreateInviteModal() {
+    openCreateInviteModal(tab = 0) {
       Object.assign(this.createInviteModal, {
         name: null,
-        expiresAfter: null,
         maxUses: null,
         createError: null,
+        agentName: null,
+        agentModel: null,
+        tab: tab,
       });
     },
     async createInvite(serverId) {
       let response = await this.$store.dispatch("server/createInvite", {
         payload: {
           serverId: serverId,
-          expiresAfter: this.createInviteModal.expiresAfter,
-          maxUses: this.createInviteModal.maxUses,
         },
         accessToken: await this.$auth0.getAccessTokenSilently(),
       });
@@ -571,6 +675,12 @@ export default {
         modal.hide();
       }
     },
+    getTypingChannel(channelId) {
+      const channel = this.chatChannels.find(obj => obj.id === channelId);
+      if (channel == null)
+          return "a different server";
+      return channel.name;
+    }
   },
 }
 </script>

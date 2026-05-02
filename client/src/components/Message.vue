@@ -18,10 +18,14 @@ console.log("Message component received message:", props.message);
 <template>
   <div :class="['chat-message', { me: isMe }]">
     <div class="container">
-      <img class="avatar" :src="message.author.avatar_url" />
+      <img class="avatar" :src="message.author.avatar_url" v-if="message.author.type == 'USER'" />
+      <div class="avatar agent" v-if="message.author.type == 'AGENT'">
+          <i class="bi bi-stars"></i>
+      </div>
       <div class="vertical">
         <div class="header">
-          <span class="username">{{ message.author.username }}</span>
+          <span class="username" v-if="message.author.type == 'USER'">{{ message.author.username }}</span>
+          <span class="username" v-if="message.author.type == 'AGENT'">{{ message.author.name }} ({{ message.author.model }})</span>
           <span class="timestamp">{{ formatTime(message.created_at) }}</span>
         </div>
         <div class="contents">
