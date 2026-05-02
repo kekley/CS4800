@@ -40,6 +40,11 @@ class User(db.Model):
         back_populates="author",
         cascade="all, delete-orphan",
     )
+    agents = db.relationship(
+        "Agent",
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
 
     def to_dict(self):
         return {

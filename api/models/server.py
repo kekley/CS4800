@@ -36,6 +36,11 @@ class Server(db.Model):
         back_populates="server",
         cascade="all, delete-orphan",
     )
+    agent_members = db.relationship(
+        "AgentMember",
+        back_populates="server",
+        cascade="all, delete-orphan",
+    )
     channels = db.relationship(
         "Channel",
         back_populates="server",

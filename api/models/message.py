@@ -14,7 +14,12 @@ class Message(db.Model):
     author_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
-        nullable=False,
+        nullable=True,
+    )
+    agent_id = db.Column(
+        db.Integer,
+        db.ForeignKey("agents.id"),
+        nullable=True,
     )
     content = db.Column(db.Text, nullable=True)
     reply_to_id = db.Column(
@@ -32,6 +37,7 @@ class Message(db.Model):
 
     channel = db.relationship("Channel", back_populates="messages")
     author = db.relationship("User", back_populates="messages")
+    agent = db.relationship("Agent", back_populates="messages")
 
     reply_to = db.relationship(
         "Message",

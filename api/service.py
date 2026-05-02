@@ -4,6 +4,7 @@ from blueprints.messages.routes import messages_blueprint
 from blueprints.users.routes import users_blueprint
 from blueprints.servers.routes import servers_blueprint
 from blueprints.channels.routes import channels_blueprint
+from blueprints.agents.routes import agents_blueprint
 
 from constants import TEST_DB_URI
 from flask import Flask, jsonify
@@ -34,11 +35,7 @@ app.register_blueprint(servers_blueprint, url_prefix="/servers")
 
 app.register_blueprint(channels_blueprint, url_prefix="/channels")
 
-
-@app.route("/", methods=["GET"])
-def get_user_info():
-    return jsonify({"message": "Hello, World!"})
-
+app.register_blueprint(agents_blueprint, url_prefix="/agents")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5050)

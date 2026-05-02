@@ -29,6 +29,15 @@ def get_user(token):
         return None
 
 
+def is_m2m_token(payload):
+    sub = payload.get("sub", "")
+    if "@clients" in sub:
+        return True
+    if "client_id" in payload and "email" not in payload:
+        return True
+    return False
+
+
 def get_jwks():
     jwks_json = requests.get(f"https://{AUTH0_DOMAIN}/.well-known/jwks.json")
     return jwks_json.json()
@@ -71,27 +80,31 @@ def require_auth(f):
         except Exception:
             return jsonify({"message": "Invalid token"}), 401
 
-        sub = payload.get("sub")
-        user = db.session.execute(
-            select(User).where(User.auth0_subject == sub)
-        ).scalar_one_or_none()
+        if not is_m2m_token(payload):
+            sub = payload.get("sub")
+            user = db.session.execute(
+                select(User).where(User.auth0_subject == sub)
+            ).scalar_one_or_none()
 
-        if not user:
-            user_info = get_user(request.headers.get("Authorization", None))
-            if not user_info:
-                return jsonify({"message": "Failed to fetch user information."}), 500
+            if not user:
+                user_info = get_user(request.headers.get("Authorization", None))
+                if not user_info:
+                    return jsonify({"message": "Failed to fetch user information."}), 500
+                
+                user = User(
+                    auth0_subject=sub,
+                    email=user_info["email"],
+                    avatar_url=user_info["picture"],
+                    displayName=f"{user_info['given_name']} {user_info['family_name']}"
+                )
+
+                db.session.add(user)
+                db.session.commit()
+
+            g.user = user
+        else:
+            g.user = "AGENT"
             
-            user = User(
-                auth0_subject=sub,
-                email=user_info["email"],
-                avatar_url=user_info["picture"],
-                displayName=f"{user_info['given_name']} {user_info['family_name']}"
-            )
-
-            db.session.add(user)
-            db.session.commit()
-
-        g.user = user
         request.user = payload
         return f(*args, **kwargs)
 

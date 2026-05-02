@@ -2,9 +2,10 @@ from http.client import HTTPException
 
 from sqlalchemy import select
 
+from models.agent import Agent
 from auth import require_auth
 from flask import Blueprint, g, jsonify, request
-from flask_extensions import db
+from flask_extensions import db, pusher
 
 from models.channel import Channel
 from models.message import Message
@@ -12,39 +13,34 @@ from blueprints.messages.services import create_message
 from blueprints.messages.validation import validate_create_message_payload
 from models.user import User
 
-from pusher import Pusher
-
-from constants import (
-    PUSHER_APP_ID, 
-    PUSHER_KEY, 
-    PUSHER_CLUSTER, 
-    PUSHER_SECRET
-)
-
 channels_blueprint = Blueprint("channels", __name__)
 
-pusher = Pusher(
-    app_id=PUSHER_APP_ID,
-    key=PUSHER_KEY,
-    secret=PUSHER_SECRET,
-    cluster=PUSHER_CLUSTER,
-    ssl=True
-)
 
-
-def format_message(message_obj, user_obj):
-    return {
+def format_message(message_obj, user_obj, channel_id, agent_obj = None):
+    res = {
         "id": message_obj.id,
+        "channel_id": channel_id,
         "content": message_obj.content,
         "created_at": message_obj.created_at.isoformat(),
-        "author": {
+        "author": None,
+        "reply_to_id": message_obj.reply_to_id,
+    }
+
+    if agent_obj is not None:
+        res["author"] = {
+            "type": "AGENT",
+            **agent_obj
+        }
+    else:
+        res["author"] = {
+            "type": "USER",
             "id": user_obj.id,
             "username": user_obj.username,
             "displayName": user_obj.displayName,
             "avatar_url": user_obj.avatar_url,
-        },
-        "reply_to_id": message_obj.reply_to_id,
-    }
+        }
+
+    return res
 
 
 @channels_blueprint.route("/<int:channel_id>/messages", methods=["POST"])
@@ -59,7 +55,15 @@ def post_message(channel_id: int):
     channel = Channel.query.get(channel_id)
     if not channel:
         return jsonify({"error": "Channel not found"}), 404
-    if g.user.memberships.filter_by(server_id=channel.server_id).first() is None:
+    
+    agent = None
+    if g.user == "AGENT":
+        agent = Agent.query.get(int(validated["agentId"]))
+        if not agent:
+            return jsonify({"error": "Agent not found"}), 404
+        if agent.memberships.filter_by(server_id=channel.server_id).first() is None:
+            return jsonify({"error": "Agent is not a member of this server"}), 403
+    elif g.user.memberships.filter_by(server_id=channel.server_id).first() is None:
         return jsonify({"error": "You are not a member of this server"}), 403
 
     if validated["reply_to_id"]:
@@ -71,14 +75,18 @@ def post_message(channel_id: int):
     try:
         message = create_message(
             channel_id=channel_id,
-            author_id=g.user.id,
+            author_id=g.user.id if g.user != "AGENT" else None,
+            agent_id=int(validated["agentId"]) if g.user == "AGENT" else None,
             content=validated["content"],
             reply_to_id=validated["reply_to_id"],
         )
     except HTTPException as exc:
         return jsonify({"error": exc.description}), exc.code
     
-    result = format_message(message, g.user)
+    if g.user == "AGENT":
+        result = format_message(message, g.user, channel_id, agent_obj=agent.to_dict())
+    else:
+        result = format_message(message, g.user, channel_id)
 
     # Push message to Pusher
     pusher.trigger(
@@ -86,6 +94,20 @@ def post_message(channel_id: int):
         event_name="new-message",
         data=result
     )
+
+    if g.user == "AGENT":
+        agent.status = 1
+        agent.typingIn = None
+        db.session.commit()
+
+        pusher.trigger(
+            channels="agent-control",
+            event_name="status-change",
+            data={
+                "agentId": int(validated["agentId"]),
+                "status": 1,
+            }
+        )
 
     return jsonify(result), 201
 
@@ -100,8 +122,9 @@ def get_messages(channel_id: int):
         return jsonify({"error": "You are not a member of this server"}), 403
 
     messages = db.session.execute(
-        select(Message, User)
-        .join(User, User.id == Message.author_id)
+        select(Message, User, Agent)
+        .outerjoin(User, User.id == Message.author_id)
+        .outerjoin(Agent, Agent.id == Message.agent_id)
         .where(Message.channel_id == channel_id)
         .order_by(Message.created_at.asc())
     ).all()
@@ -114,7 +137,7 @@ def get_messages(channel_id: int):
             grouped_messages[date_key] = []
         
         grouped_messages[date_key].append(
-            format_message(message.Message, message.User)
+            format_message(message.Message, message.User, channel_id, agent_obj=message.Agent.to_dict() if message.Agent else None)
         )
 
     sorted_messages = dict(sorted(grouped_messages.items()))

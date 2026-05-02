@@ -10,6 +10,8 @@ from models.channel import Channel
 from models.invite import Invite
 from models.server import Server
 from models.user import User
+from models.agent import Agent
+from models.agent_member import AgentMember
 from models.server_member import ROLE_ADMIN, ROLE_MEMBER, ROLE_OWNER, ServerMember
 
 servers_blueprint = Blueprint("servers", __name__)
@@ -256,6 +258,34 @@ def list_server_members(server_id: int):
             "avatar_url": row.avatar_url,
             "role": row.role,
         }
+        for row in rows
+    ]
+
+    return jsonify(result), 200
+
+
+@servers_blueprint.route("/<int:server_id>/agents", methods=["GET"])
+@require_auth
+def list_server_agents(server_id: int):
+    server = Server.query.get(server_id)
+    if not server:
+        return jsonify({"message": "Server not found"}), 404
+    
+    membership = ServerMember.query.filter_by(
+        server_id=server_id, user_id=g.user.id
+    ).first()
+    if not membership:
+        return jsonify({"message": "You are not a member of this server"}), 403
+    
+    rows = db.session.execute(
+        select(Agent)
+        .join(AgentMember, AgentMember.agent_id == Agent.id)
+        .where(AgentMember.server_id == server_id)
+        .order_by(Agent.name.asc())
+    ).scalars().all()
+
+    result = [
+        row.to_dict()
         for row in rows
     ]
 
