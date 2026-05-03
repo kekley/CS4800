@@ -130,9 +130,12 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
 
         <div style="padding: 10px" v-if="this.createInviteModal.tab == 1">
 
-          <input class="text-input" placeholder="Agent Name" v-model="this.createInviteModal.agentName" style="width: 100%; padding: 7px 10px" />
+          <input class="text-input mb-2" placeholder="Agent Name" v-model="this.createInviteModal.agentName" style="width: 100%; padding: 7px 10px" />
 
-          <select class="form-select text-input mt-2" v-model="this.createInviteModal.agentModel">
+          <textarea class="text-input mb-1" v-model="this.createInviteModal.personality" placeholder="Give your agent a personality"
+            style="width: 100% !important; padding: 7px 10px" rows="3"></textarea>
+
+          <select class="form-select text-input" v-model="this.createInviteModal.agentModel">
             <option value="" selected disabled>Select a model type</option>
             <option value="llama">Llama 3</option>
             <option value="mistral">Mistral</option>
@@ -207,6 +210,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           </div>
           <div class="left-sidebar">
             <ChannelBar ref="channelBar" :currentServer="this.currentServer" :currentChannel="this.currentChannel"
+              :agents="this.userAgents"
               @update-currentChannel="this.currentChannel = $event"
               @update-chatChannels="this.chatChannels = $event" />
           </div>
@@ -302,9 +306,10 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
             <div style="display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 15px; align-items: center;">
               <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
                 <img :src="member.avatar_url" class="avatar">
-                <p style="margin: 0; margin-left: 15px;">{{ member.displayName }}</p>
+                <p style="margin: 0; margin-left: 15px;" v-if="member.role != 0">{{ member.displayName }}</p>
+                <p style="margin: 0; margin-left: 15px; font-weight: 800; color:#BB2D3C;" v-if="member.role == 0">{{ member.displayName }}</p>
               </div>
-              <p style="margin: 0;"><i class="bi bi-three-dots-vertical"></i></p>
+              <p style="margin: 0;" v-if="this.currentServerMembers.members.find(obj => obj.id === this.userInfo.id).role == 0 && member.id != this.userInfo.id"><i class="bi bi-three-dots-vertical"></i></p>
             </div>
           </template>
 
@@ -319,6 +324,13 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
             </button>
           </div>
 
+          <template v-if="this.currentServerMembers.agents.length == 0">
+            <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center;">
+              <div style="text-align: center; width: 200px; color: var(--secondary)">
+                There are no agents in this server
+              </div>
+            </div>
+          </template>
           <template v-for="agent in this.currentServerMembers.agents">
             <div style="display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 15px; align-items: center;">
               <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
@@ -349,10 +361,6 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
         
         </div>
 
-        <div style="width: 100%;">
-          Server Settings
-        </div>
-
       </div>
 
       <div class="home-content" v-if="this.currentServer == 'home'">
@@ -379,7 +387,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
                 align-items: center;
               ">
               <div>
-                <p style="margin: 0; color: #674ea7; font-size: 45px">0</p>
+                <p style="margin: 0; color: #674ea7; font-size: 45px">{{ this.userStats.messages }}</p>
                 <p>message(s) sent</p>
               </div>
             </div>
@@ -391,7 +399,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
                 align-items: center;
               ">
               <div>
-                <p style="margin: 0; color: #674ea7; font-size: 45px">0</p>
+                <p style="margin: 0; color: #674ea7; font-size: 45px">{{ this.userStats.agents }}</p>
                 <p>agent(s)</p>
               </div>
             </div>
@@ -403,7 +411,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
                 align-items: center;
               ">
               <div>
-                <p style="margin: 0; color: #674ea7; font-size: 45px">0</p>
+                <p style="margin: 0; color: #674ea7; font-size: 45px">{{ this.userStats.servers }}</p>
                 <p>server(s) owned</p>
               </div>
             </div>
@@ -480,6 +488,8 @@ export default {
       currentChannel: null,
       user,
       userInfo: null,
+      userStats: null,
+      userAgents: [],
       needsUsername: false,
       hasUsernameError: false,
       isAuthenticated,
@@ -487,6 +497,7 @@ export default {
   },
   async mounted() {
     await this.loadUserInfo();
+    await this.loadUserAgents();
     await this.loadUserServers();
     this.ready = true;
     this.initPusherConnection();
@@ -499,8 +510,17 @@ export default {
     },
   },
   methods: {
+    async loadUserAgents() {
+      let response = await this.$store.dispatch("agent/listOwnedAgents", {
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      this.userAgents = response.data;
+    },
     async loadUserInfo() {
       this.userInfo = await this.$store.dispatch("user/getUserInfo", {
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      this.userStats = await this.$store.dispatch("user/getUserStats", {
         accessToken: await this.$auth0.getAccessTokenSilently(),
       });
       if (this.userInfo.username == null) {

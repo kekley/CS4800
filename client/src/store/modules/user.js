@@ -31,6 +31,18 @@ export default {
                 return error.response;
             }
         },
+        async getUserStats({commit}, data) {
+            try {
+                let response = await Api().get('users/self/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${data.accessToken}`
+                    }
+                });
+                return response.data;
+            } catch(error) {
+                return error.response;
+            }
+        }
     },
     getters: {
     }

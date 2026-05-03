@@ -47,7 +47,37 @@ const selectChannel = (channelId) => {
 
   <div class="channel-bar" v-if="!loading">
     <div v-if="currentServer == 'home'">
+
       <p class="label">Your Agents</p>
+
+      <template v-if="this.agents.length == 0">
+        <div style="width: 100%; height: 150px; display: flex; align-items: center; justify-content: center;">
+          <div style="text-align: center; width: 200px; color: var(--secondary)">
+            You haven't created any agents yet.
+          </div>
+        </div>
+      </template>
+      <template v-for="agent in this.agents">
+        <div class="channel-thumb mt-2" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
+          <div style="display: flex; flex-direction: row;">
+            <div class="avatar agent" v-if="[1, 3].includes(agent.status)">
+                <i class="bi bi-stars"></i>
+            </div>
+            <div class="spinner-border custom-spinner" v-if="[0, 2].includes(agent.status)">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <div style="margin-left: 15px;">
+              <p style="margin: 0;">{{ agent.name }} ({{ agent.model }})</p>
+              <p style="margin: 0; font-size: 12px;" v-if="agent.status == 0">Initializing...</p>
+              <p style="margin: 0; font-size: 12px; color: green;" v-if="agent.status == 1">Ready</p>
+              <p style="margin: 0; font-size: 12px;" v-if="agent.status == 2">Typing...</p>
+              <p style="margin: 0; font-size: 12px;" v-if="agent.status == 3">Sleeping</p>
+            </div>
+          </div>
+          <i class="bi bi-three-dots-vertical"></i>
+        </div>
+      </template>
+
     </div>
 
     <div v-if="currentServer != 'home'">
@@ -82,10 +112,6 @@ const selectChannel = (channelId) => {
         }" @click="selectChannel(channel.id)">
           <span style="font-weight: 700"><i class="bi bi-hash"></i> {{ channel.name }}</span>
           <br />
-          <div class="presence-indicator" v-if="channel.id == 10">
-            <div class="spinner-grow text-success" role="status"></div>
-            <p>5 members here</p>
-          </div>
         </div>
       </template>
 
@@ -109,6 +135,10 @@ export default {
     };
   },
   props: {
+    agents: {
+      type: Object,
+      required: true,
+    },
     currentServer: {
       type: Object,
       required: true,

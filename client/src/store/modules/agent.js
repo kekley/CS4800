@@ -53,6 +53,21 @@ export default {
         return error.response;
       }
     },
+    async listOwnedAgents({ commit }, data) {
+      try {
+        let response = await Api().get(
+          `agents/list`,
+          {
+            headers: {
+              Authorization: `Bearer ${data.accessToken}`,
+            },
+          },
+        );
+        return response;
+      } catch (error) {
+        return error.response;
+      }
+    },
     async assocAgent({ commit }, data) {
       try {
         let response = await Api().put(
