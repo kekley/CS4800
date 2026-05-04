@@ -1053,6 +1053,12 @@ export default {
           this.createJoinModal.createError = response.data["message"];
         }
       },
+      search: {
+        input: null,
+        tab: 0,
+        results: null,
+        loading: false,
+      },
       ws_info: {
         connectionState: null,
         latency: null,

@@ -15,11 +15,13 @@ AUTH0_TOKEN_URL = os.getenv("AUTH0_TOKEN_URL")
 AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
 AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
 
+
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://ollama:11434")
 
 PUSHER_APP_KEY = os.getenv("PUSHER_APP_KEY")
 
 API_URL = os.getenv("API_URL")
+MAX_ATTACHMENT_PROMPT_CHARS = int(os.getenv("MAX_ATTACHMENT_PROMPT_CHARS", "12000"))
 
 token_response = requests.post(
     AUTH0_TOKEN_URL,
