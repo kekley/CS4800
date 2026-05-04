@@ -4,6 +4,7 @@ import pusher
 import docker
 from sqlalchemy import select
 
+from models.server import Server
 from models.channel import Channel
 from models.agent import Agent
 from models.agent_member import AgentMember
@@ -52,6 +53,7 @@ def create_agent(serverId):
         name=name,
         userId=owner.id,
         model=models[model.lower()],
+        personality=payload["personality"].strip() if "personality" in payload else None,
         status=0
     )
     db.session.add(new_agent)
@@ -70,7 +72,8 @@ def create_agent(serverId):
             "OLLAMA_HOST": "http://ollama:11434",
         },
         network="agents_default",
-        detach=True
+        detach=True,
+        remove=True,
     )
 
     pusher.trigger(
@@ -85,6 +88,52 @@ def create_agent(serverId):
     return jsonify(new_agent.to_dict()), 201
 
 
+@agents_blueprint.route("/<int:agentId>", methods=["PUT"])
+@require_auth
+def update_agent(agentId):
+    agent = Agent.query.get(agentId)
+    if not agent:
+        return jsonify({"error": "Agent not found"}), 404
+    
+    if agent.userId != g.user.id:
+        return jsonify({"error": "You do not own this agent"}), 403
+    
+    models = {
+        "llama": "llama3.2",
+        "mistral": "mistral",
+        "gemma": "gemma3"
+    }
+
+    payload = request.get_json()
+
+    name = (
+        payload["name"].strip()
+        if "name" in payload and isinstance(payload["name"], str)
+        else None
+    )
+    if name is not None:
+        agent.name = name
+    
+    model = (
+        payload["model"].strip()
+        if "model" in payload and isinstance(payload["model"], str)
+        else None
+    )
+    if model is not None:
+        agent.model = models[model.lower()]
+
+    personality = (
+        payload["personality"].strip()
+        if "personality" in payload and isinstance(payload["personality"], str)
+        else None
+    )
+    if personality is not None:
+        agent.personality = personality
+
+    db.session.commit()
+
+    return jsonify(agent.to_dict()), 204
+
 @agents_blueprint.route("/<int:agentId>/wake", methods=["POST"])
 @require_auth
 def wake_agent(agentId):
@@ -98,6 +147,15 @@ def wake_agent(agentId):
     agent.status = 0
     db.session.commit()
 
+    pusher.trigger(
+        channels="agent-control",
+        event_name="status-change",
+        data={
+            "agentId": agentId,
+            "status": 0
+        }
+    )
+
     docker_client.containers.run(
         image="agent-app",
         name=f"agent-{agent.id}-{agent.name}",
@@ -106,17 +164,8 @@ def wake_agent(agentId):
             "OLLAMA_HOST": "http://ollama:11434",
         },
         network="agents_default",
-        detach=True,
+        detach=False,
         remove=True,
-    )
-
-    pusher.trigger(
-        channels="agent-control",
-        event_name="status-change",
-        data={
-            "agentId": agentId,
-            "status": 0
-        }
     )
 
     return "", 204
@@ -257,3 +306,31 @@ def get_agent_channels(agentId):
     return jsonify({
         "channels": channel_list
     }), 200
+
+
+@agents_blueprint.route("/list", methods=["GET"])
+@require_auth
+def list_owned_agents():
+    owner = g.user
+
+    agents = db.session.execute(
+        select(Agent)
+        .where(Agent.userId == owner.id)
+    ).scalars().all()
+
+    res = [
+        agent.to_dict()
+        for agent in agents
+    ]
+
+    return jsonify(res), 200
+
+
+@agents_blueprint.route("/<int:agentId>/info", methods=["GET"])
+@require_auth
+def get_agent_info(agentId):
+    if g.user != "AGENT":
+        return jsonify({"error": "This endpoint is for agent access only"}), 403
+
+    agent = Agent.query.get(agentId)
+    return jsonify(agent.to_dict()), 200

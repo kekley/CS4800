@@ -2,7 +2,12 @@ from auth import require_auth
 from flask import Blueprint, g, jsonify, request
 from flask_extensions import db
 
+from sqlalchemy import select, func
+
+from models.message import Message
+from models.agent import Agent
 from models.user import User
+from models.server import Server
 
 users_blueprint = Blueprint("users", __name__)
 
@@ -37,3 +42,28 @@ def update_self():
     db.session.commit()
 
     return jsonify(g.user.to_dict()), 204
+
+
+@users_blueprint.route("/self/stats", methods=["GET"])
+@require_auth
+def get_self_stats():
+    message_count = db.session.execute(
+        select(func.count(Message.id))
+        .where(Message.author_id == g.user.id)
+    ).scalar()
+
+    agent_count = db.session.execute(
+        select(func.count(Agent.id))
+        .where(Agent.userId == g.user.id)
+    ).scalar()
+
+    server_count = db.session.execute(
+        select(func.count(Server.id))
+        .where(Server.owner == g.user.id)
+    ).scalar()
+
+    return jsonify({
+        "messages": message_count,
+        "agents": agent_count,
+        "servers": server_count
+    }), 200

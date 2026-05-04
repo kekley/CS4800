@@ -41,6 +41,7 @@ watch(() => props.servers, async () => {
 <template>
   <div class="server-bar">
     <div class="server-list">
+
       <div class="server-thumb">
         <div
           :class="{
@@ -55,6 +56,23 @@ watch(() => props.servers, async () => {
           @click="selectServer('home')"
         >
           <i class="bi bi-house"></i>
+        </div>
+      </div>
+
+      <div class="server-thumb">
+        <div
+          :class="{
+            'server-icon': true,
+            home: true,
+            active: this.currentServer == 'search',
+          }"
+          data-bs-custom-class="custom-popover"
+          data-bs-toggle="popover"
+          data-bs-trigger="hover focus"
+          data-bs-content="Search"
+          @click="selectServer('search')"
+        >
+          <i class="bi bi-search"></i>
         </div>
       </div>
 

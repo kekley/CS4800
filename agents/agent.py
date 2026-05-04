@@ -71,15 +71,18 @@ def pusher_message_callback(data):
 
 def pusher_add_server(data):
 	deserialized = json.loads(data)
-	if deserialized["agentId"] == args.agentId:
+	if deserialized["agentId"] == int(args.agentId):
 		for channelId in deserialized["channels"]:
 			channel = pusher.subscribe(f"chat-channel-{channelId}")
 			channel.bind("new-message", pusher_message_callback)
 
-register_response = post(f"agents/register/{args.agentId}")
-if register_response.status_code != 204:
-	print("ERROR: Failed to register agent.")
+info_response = get(f"agents/{args.agentId}/info")
+if info_response.status_code != 200:
+	print("ERROR: Failed to fetch agent information.")
 	sys.exit(1)
+
+agent_info = info_response.json()
+print(f"Personality: {agent_info['personality']}")
 
 channels_response = get(f"agents/{args.agentId}/channels")
 if channels_response.status_code != 200:
@@ -91,6 +94,11 @@ channelIds = channels_response["channels"]
 
 pusher = pysher.Pusher(PUSHER_APP_KEY, cluster="us3")
 
+register_response = post(f"agents/register/{args.agentId}")
+if register_response.status_code != 204:
+	print("ERROR: Failed to register agent.")
+	sys.exit(1)
+
 def pusher_connection_handler(data):
 	for channelId in channelIds:
 		channel = pusher.subscribe(f"chat-channel-{channelId}")
@@ -98,10 +106,13 @@ def pusher_connection_handler(data):
 
 	status_channel = pusher.subscribe("agent-control")
 	status_channel.bind("membership-added", pusher_add_server)
+	
 	print("Registered Pusher channel connections.")
 
 pusher.connection.bind("pusher:connection_established", pusher_connection_handler)
 pusher.connect()
+
+agentReplyMap = {}
 
 while True:
 	message = message_queue.get()
@@ -109,15 +120,61 @@ while True:
 	print(f"Received message ID {message['id']}")
 
 	if message["author"]["type"] == "AGENT":
-		continue
+		if message["author"]["id"] == int(args.agentId):
+			continue
 
-	channelId = message['channel_id'] 
+		if message["author"]["id"] not in agentReplyMap:
+			agentReplyMap[message["author"]["id"]] = {
+				"received": 0,
+				"reset": 0
+			}
+
+		if agentReplyMap[message["author"]["id"]]["received"] >= 3:
+			agentReplyMap[message["author"]["id"]]["reset"] += 1
+			continue
+
+		if agentReplyMap[message["author"]["id"]]["reset"] >= 5:
+			agentReplyMap[message["author"]["id"]]["received"] = 0
+			agentReplyMap[message["author"]["id"]]["reset"] = 0
+		
+		agentReplyMap[message["author"]["id"]]["received"] += 1
+
+	channelId = message["channel_id"] 
 
 	post(f"agents/{args.agentId}/startreply/{channelId}")
-	
+
+	recentMessages = get(f"channels/{channelId}/messages/recent")
+	recentMessages = recentMessages.json()
+
+	messages = [
+		{
+			"role": "system",
+			"content": f"You are an agent in a virtual messaging system where you will interact with real users and other LLM agents. Do not end your responses with follow up questions. Your personality is as follows: {agent_info['personality']}"
+		}
+	]
+
+	for msg in recentMessages:
+		if msg["id"] == message["id"]:
+			continue
+
+		role = "user"
+		if (msg["author"]["type"] == "AGENT" and 
+			msg["author"]["id"] == int(args.agentId)):
+			role = "assistant"
+		
+		messages.append({
+			"role": role,
+			"content": msg["content"]
+		})
+
+	messages.append({
+		"role": "user",
+		"content": message["content"]
+	})
+				
 	agent_response = client.chat(
 		model=args.model,
-		messages=[{"role": "user", "content": message["content"]}]
+		messages=messages
 	)
 
 	res = post(f"/channels/{channelId}/messages", {

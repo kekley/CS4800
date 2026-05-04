@@ -143,3 +143,31 @@ def get_messages(channel_id: int):
     sorted_messages = dict(sorted(grouped_messages.items()))
 
     return jsonify(sorted_messages), 200
+
+
+@channels_blueprint.route("/<int:channel_id>/messages/recent", methods=["GET"])
+@require_auth
+def get_recent_message(channel_id: int):
+    channel = Channel.query.get(channel_id)
+    if not channel:
+        return jsonify({"error": "Channel not found"}), 404
+    if g.user != "AGENT":
+        return jsonify({"error": "This endpoint is for agent access only"}), 403
+
+    messages = db.session.execute(
+        select(Message, User, Agent)
+        .outerjoin(User, User.id == Message.author_id)
+        .outerjoin(Agent, Agent.id == Message.agent_id)
+        .where(Message.channel_id == channel_id)
+        .order_by(Message.created_at.desc())
+        .limit(5)
+    ).all()
+
+    res = [
+        format_message(message.Message, message.User, channel_id, agent_obj=message.Agent.to_dict() if message.Agent else None)
+        for message in messages
+    ]
+
+    res = sorted(res, key=lambda x: x['created_at'])
+
+    return jsonify(res), 200

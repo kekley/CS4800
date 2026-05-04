@@ -132,7 +132,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
 
           <input class="text-input mb-2" placeholder="Agent Name" v-model="this.createInviteModal.agentName" style="width: 100%; padding: 7px 10px" />
 
-          <textarea class="text-input mb-1" v-model="this.createInviteModal.personality" placeholder="Give your agent a personality"
+          <textarea class="text-input mb-1" v-model="this.createInviteModal.agentPersonality" placeholder="Give your agent a personality"
             style="width: 100% !important; padding: 7px 10px" rows="3"></textarea>
 
           <select class="form-select text-input" v-model="this.createInviteModal.agentModel">
@@ -352,6 +352,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
                 <p role="button" data-bs-toggle="dropdown" aria-expanded="false" style="margin: 0;" v-if="agent.user_id == this.userInfo.id"><i class="bi bi-three-dots-vertical"></i></p>
 
                 <ul class="dropdown-menu" style="width: 300px; background: #151626; border: 2px solid rgba(255, 255, 255, 0.12);">
+                  <li><a class="dropdown-item" v-if="agent.status == 3">Edit agent settings</a></li>
                   <li><a class="dropdown-item" v-if="agent.status == 3" @click="wakeAgent(agent.id)">Wake agent</a></li>
                   <li><a class="dropdown-item" style="color: #BB2D3C !important;" v-if="agent.status != 3" @click="sleepAgent(agent.id)">Send agent to sleep</a></li>
                 </ul>
@@ -474,6 +475,7 @@ export default {
       createInviteModal: {
         createError: null,
         agentName: null,
+        agentPersonality: null,
         agentModel: null,
         tab: 0,
       },
@@ -577,6 +579,7 @@ export default {
         serverId: this.currentServer.id,
         payload: {
           name: this.createInviteModal.agentName,
+          personality: this.createInviteModal.agentPersonality,
           model: this.createInviteModal.agentModel,
         },
         accessToken: await this.$auth0.getAccessTokenSilently(),
