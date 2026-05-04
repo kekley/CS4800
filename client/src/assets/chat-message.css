@@ -34,12 +34,20 @@
     flex-shrink: 0;
 }
 
-.avatar.agent {
+.avatar.agent-llama {
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     background: linear-gradient(to top right, blue, purple);
+}
+
+.avatar.agent-gemma {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background: linear-gradient(to top right, orange, red);
 }
 
 .vertical {

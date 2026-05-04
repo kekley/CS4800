@@ -2,6 +2,7 @@
 import ServerBar from "../components/ServerBar.vue";
 import ChannelBar from "../components/ChannelBar.vue";
 import ChatWindow from "../components/ChatWindow.vue";
+import Message from "../components/Message.vue"
 import logo from "../assets/images/st-logo-light.svg";
 import logoFlat from "../assets/images/st-logo-flat.svg";
 </script>
@@ -158,6 +159,55 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
   </div>
   <!-- END Create Invite Modal -->
 
+  <!-- BEGIN Update Agent Modal -->
+  <div class="modal fade" id="updateAgentInfoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 650px !important">
+        <div class="modal-content" style="
+          background: var(--bg-0);
+          padding: 10px;
+          color: white;
+          font-family: 'Ubuntu';
+          max-width: 650px !important;
+        ">
+
+          <div class="row mb-2">
+            <div class="col-12" style="margin: 0; padding: 0">
+              <div class="slider-tab active">
+                Update Agent
+              </div>
+            </div>
+          </div>
+
+          <div style="padding: 10px">
+
+            <input class="text-input mb-2" placeholder="Agent Name" v-model="this.updateAgentModal.agentName" style="width: 100%; padding: 7px 10px" />
+
+            <textarea class="text-input mb-1" v-model="this.updateAgentModal.agentPersonality" placeholder="Give your agent a personality"
+              style="width: 100% !important; padding: 7px 10px" rows="3"></textarea>
+
+            <select class="form-select text-input" v-model="this.updateAgentModal.agentModel">
+              <option value="" selected disabled>Select a model type</option>
+              <option value="llama">Llama 3</option>
+              <option value="mistral">Mistral</option>
+              <option value="gemma">Gemma</option>
+            </select>
+
+            <div style="display:flex; flex-direction: row">
+              <button class="button mt-3" style="width: 100%" @click="updateAgent()">
+                Update Agent
+              </button>
+              <button class="button mt-3" style="width: 100%; margin-left: 10px; background: var(--secondary)" data-bs-dismiss="modal">
+                Cancel
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+    </div>
+  </div>
+  <!-- END Update Agent Modal -->
+
   <div class="loading" v-if="!this.ready || this.needsUsername">
     <img :src="logo" style="width: 200px" /> <br />
 
@@ -187,11 +237,12 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
   <div class="main" v-if="this.ready && !this.needsUsername">
     <div class="head-nav">
       <img :src="logo" style="width: 125px" />
-      <input class="text-input" placeholder="Search your messages..."
+      <input class="text-input" placeholder="Search your messages..." v-model="this.search.input"
+        @keyup.enter="searchMessages()"
         style="width: 400px !important; padding: 7px 10px" />
     </div>
     <div class="top-bar">
-      {{this.currentServer.name || "Home"}}
+      {{this.currentServer.name || this.currentServer.charAt(0).toUpperCase() + this.currentServer.slice(1)}}
     </div>
     <div class="app-window">
       
@@ -210,9 +261,13 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           </div>
           <div class="left-sidebar">
             <ChannelBar ref="channelBar" :currentServer="this.currentServer" :currentChannel="this.currentChannel"
-              :agents="this.userAgents"
+              :agents="this.userAgents" :currentSearchTab="this.search.tab"
               @update-currentChannel="this.currentChannel = $event"
-              @update-chatChannels="this.chatChannels = $event" />
+              @update-chatChannels="this.chatChannels = $event"
+              @update-search-tab="this.search.tab = $event"
+              @wake-agent="wakeAgent"
+              @open-agent-modal="openUpdateAgentModal"
+              @sleep-agent="sleepAgent" />
           </div>
         </div>
 
@@ -274,14 +329,14 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
         </div>
       </div>
 
-      <div class="main-content" v-if="this.currentServer != 'home'">
+      <div class="main-content" v-if="this.currentServer != 'home' && this.currentServer != 'search'">
         <ChatWindow 
           :currentChannel="this.currentChannel"
           :currentUser="this.userInfo"
           :pusher="this.ws_info.pusher" />
       </div>
 
-      <div class="right-sidebar" v-if="this.currentServer != 'home'">
+      <div class="right-sidebar" v-if="this.currentServer != 'home' && this.currentServer != 'search'">
         <!-- <MemberBar :server="this.currentServer" /> -->
         <div style="flex: 1; overflow-y: hidden; display: flex; justify-content: center; align-items: center;" v-if="this.currentServerMembers.loading">
           <div class="spinner-border custom-spinner" role="status">
@@ -334,7 +389,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           <template v-for="agent in this.currentServerMembers.agents">
             <div style="display: flex; flex-direction: row; justify-content: space-between; margin-bottom: 15px; align-items: center;">
               <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
-                <div class="avatar agent" v-if="[1, 3].includes(agent.status)">
+                <div :class="{'avatar': true, 'agent-llama': (agent.model == 'llama3.2'), 'agent-gemma': (agent.model == 'gemma3')}" v-if="[1, 3].includes(agent.status)">
                     <i class="bi bi-stars"></i>
                 </div>
                 <div class="spinner-border custom-spinner" v-if="[0, 2].includes(agent.status)">
@@ -352,7 +407,7 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
                 <p role="button" data-bs-toggle="dropdown" aria-expanded="false" style="margin: 0;" v-if="agent.user_id == this.userInfo.id"><i class="bi bi-three-dots-vertical"></i></p>
 
                 <ul class="dropdown-menu" style="width: 300px; background: #151626; border: 2px solid rgba(255, 255, 255, 0.12);">
-                  <li><a class="dropdown-item" v-if="agent.status == 3">Edit agent settings</a></li>
+                  <li><a class="dropdown-item" v-if="agent.status == 3" @click="openUpdateAgentModal(agent)">Edit agent settings</a></li>
                   <li><a class="dropdown-item" v-if="agent.status == 3" @click="wakeAgent(agent.id)">Wake agent</a></li>
                   <li><a class="dropdown-item" style="color: #BB2D3C !important;" v-if="agent.status != 3" @click="sleepAgent(agent.id)">Send agent to sleep</a></li>
                 </ul>
@@ -430,6 +485,42 @@ import logoFlat from "../assets/images/st-logo-flat.svg";
           </div>
         </div>
       </div>
+
+      <div class="home-content" v-if="this.currentServer == 'search'">
+
+        <div style="text-align: center;" v-if="this.search.tab == 0">
+          <h1 style="font-size: 32px; font-weight: 600; color: white; margin-bottom: 20px;">What are you trying to find today?</h1>
+          <input class="text-input" placeholder="Search your messages..." v-model="this.search.input"
+            @keyup.enter="searchMessages()"
+            style="width: 800px !important; padding: 7px 10px; font-size: 25px;" />
+        </div>
+
+        <div style="width: 100%; height: 100%; overflow-y: scroll !important; padding: 10px;" v-if="this.search.tab == 1 && (this.search.results != null && this.search.loading != true)">
+          <input class="text-input" placeholder="Search your messages..." v-model="this.search.input"
+            @keyup.enter="searchMessages()"
+            style="width: 100% !important; padding: 7px 10px;" />
+          <p class="my-2" style="color: white;">Found <strong>{{ this.search.results.count }} results</strong> to your query</p>
+          <ol class="message-list">
+            <template v-for="message in this.search.results.results">
+              <li class="message-list-item">
+                <Message :message="message" :isMe="false" />
+              </li>
+            </template>
+          </ol>
+        </div>
+
+        <div v-if="this.search.tab == 1 && this.search.results == null && this.search.loading == false">
+          Please submit a search query before viewing results
+        </div>
+
+        <div v-if="this.search.tab == 1 && this.search.loading == true">
+          <div class="spinner-border custom-spinner" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 </template>
@@ -457,6 +548,12 @@ export default {
           this.createJoinModal.createError = response.data['message'];
         }
       },
+      search: {
+        input: null,
+        tab: 0,
+        results: null,
+        loading: false
+      },
       ws_info: {
         connectionState: null,
         latency: null,
@@ -478,6 +575,12 @@ export default {
         agentPersonality: null,
         agentModel: null,
         tab: 0,
+      },
+      updateAgentModal: {
+        agentId: null,
+        agentName: null,
+        agentModel: null,
+        agentPersonality: null,
       },
       userServers: [],
       chatChannels: [],
@@ -506,7 +609,7 @@ export default {
   },
   watch: {
     currentServer(newServer) {
-      if (newServer !== "home") {
+      if (newServer !== "home" && newServer !== "search") {
         this.fetchServerMembers(newServer.id);
       }
     },
@@ -534,7 +637,6 @@ export default {
         accessToken: await this.$auth0.getAccessTokenSilently(),
       });
     },
-
     async submitUsername() {
       let response = await this.$store.dispatch("user/updateUserInfo", {
         updates: {
@@ -594,6 +696,35 @@ export default {
         modal.hide();
       }
     },
+    async updateAgent() {
+      let response = await this.$store.dispatch("agent/updateAgent", {
+        agentId: this.updateAgentModal.agentId,
+        payload: {
+          name: this.updateAgentModal.agentName,
+          personality: this.updateAgentModal.agentPersonality,
+          model: this.updateAgentModal.agentModel,
+        },
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      if (response.status && response.status != 200) {
+        alert(response.data.message);
+      } else {
+        let serverAgent = this.currentServerMembers.agents.find(obj => obj.id === this.updateAgentModal.agentId);
+        if (serverAgent) {
+          Object.assign(serverAgent, response.data);
+        }
+
+        let userAgent = this.userAgents.find(obj => obj.id === this.updateAgentModal.agentId);
+        if (userAgent) {
+          Object.assign(userAgent, response.data);
+        }
+
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("updateAgentInfoModal"),
+        );
+        modal.hide();
+      }
+    },
     async wakeAgent(agentId) {
       await this.$store.dispatch("agent/wakeAgent", {
         agentId: agentId,
@@ -649,12 +780,17 @@ export default {
 
       this.agent_control = this.ws_info.pusher.subscribe("agent-control");
       this.agent_control.bind('status-change', (data) => {
-        const agent = this.currentServerMembers.agents.find(obj => obj.id === data.agentId);
-        if (agent != null) {
-          agent.status = data.status;
+        const serverAgent = this.currentServerMembers.agents.find(obj => obj.id === data.agentId);
+        if (serverAgent != null) {
+          serverAgent.status = data.status;
           if ("typingIn" in data) {
-            agent.typingIn = data.typingIn;
+            serverAgent.typingIn = data.typingIn;
           }
+        }
+
+        const userAgent = this.userAgents.find(obj => obj.id === data.agentId);
+        if (serverAgent != null) {
+          userAgent.status = data.status;
         }
       });
     },
@@ -677,6 +813,21 @@ export default {
         agentModel: null,
         tab: tab,
       });
+    },
+    openUpdateAgentModal(agent) {
+      let modelMap = {
+        "llama3.2": "llama",
+        "gemma3": "gemma",
+        "mistral": "mistral"
+      };
+
+      this.updateAgentModal.agentId = agent.id;
+      this.updateAgentModal.agentName = agent.name;
+      this.updateAgentModal.agentPersonality = agent.personality;
+      this.updateAgentModal.agentModel = modelMap[agent.model];
+
+      const modal = new bootstrap.Modal(document.getElementById("updateAgentInfoModal"));
+      modal.show();
     },
     async createInvite(serverId) {
       let response = await this.$store.dispatch("server/createInvite", {
@@ -703,6 +854,19 @@ export default {
       if (channel == null)
           return "a different server";
       return channel.name;
+    },
+    async searchMessages() {
+      this.currentServer = 'search';
+      this.search.tab = 1;
+      this.search.loading = true;
+      let response = await this.$store.dispatch("message/searchMessages", {
+        query: this.search.input,
+        accessToken: await this.$auth0.getAccessTokenSilently(),
+      });
+      if(response.status == 200) {
+        this.search.results = response.data;
+      }
+      this.search.loading = false;
     }
   },
 }

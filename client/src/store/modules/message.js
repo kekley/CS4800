@@ -41,8 +41,25 @@ export default {
             } catch (error) {
                 return error.response;
             }
+        },
+        async searchMessages({ commit }, data) {
+            try {
+                let response = await Api().post(
+                    `messages/search`,
+                    {
+                        query: data.query,
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${data.accessToken}`
+                        }
+                    }
+                );
+                return response;
+            } catch (error) {
+                return error.response;
+            }
         }
-
     },
     getters: {
     }

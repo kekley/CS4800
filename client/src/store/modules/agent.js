@@ -21,6 +21,22 @@ export default {
         return error.response;
       }
     },
+    async updateAgent({ commit }, data) {
+      try {
+        let response = await Api().put(
+          `agents/${data.agentId}`,
+          data.payload,
+          {
+            headers: {
+              Authorization: `Bearer ${data.accessToken}`,
+            },
+          },
+        );
+        return response;
+      } catch (error) {
+        return error.response;
+      }
+    },
     async wakeAgent({ commit }, data) {
       try {
         let response = await Api().post(

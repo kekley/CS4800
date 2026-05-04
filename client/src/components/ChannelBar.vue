@@ -2,10 +2,14 @@
 import "../assets/channel-bar.css";
 import { watch, ref, computed } from "vue";
 
-const emit = defineEmits(["update-currentChannel", "update-chatChannels"]);
+const emit = defineEmits(["update-currentChannel", "update-chatChannels", "wake-agent", "open-agent-modal", "sleep-agent", "update-search-tab"]);
 
 const selectChannel = (channelId) => {
   emit("update-currentChannel", channelId);
+};
+
+const selectSearchTab = (searchTab) => {
+  emit("update-search-tab", searchTab);
 };
 </script>
 
@@ -60,7 +64,7 @@ const selectChannel = (channelId) => {
       <template v-for="agent in this.agents">
         <div class="channel-thumb mt-2" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
           <div style="display: flex; flex-direction: row;">
-            <div class="avatar agent" v-if="[1, 3].includes(agent.status)">
+            <div :class="{'avatar': true, 'agent-llama': (agent.model == 'llama3.2'), 'agent-gemma': (agent.model == 'gemma3')}" v-if="[1, 3].includes(agent.status)">
                 <i class="bi bi-stars"></i>
             </div>
             <div class="spinner-border custom-spinner" v-if="[0, 2].includes(agent.status)">
@@ -74,13 +78,31 @@ const selectChannel = (channelId) => {
               <p style="margin: 0; font-size: 12px;" v-if="agent.status == 3">Sleeping</p>
             </div>
           </div>
-          <i class="bi bi-three-dots-vertical"></i>
+          <div class="dropdown">
+            <p role="button" data-bs-toggle="dropdown" aria-expanded="false" style="margin: 0;"><i class="bi bi-three-dots-vertical"></i></p>
+
+            <ul class="dropdown-menu" style="width: 300px; background: #151626; border: 2px solid rgba(255, 255, 255, 0.12);">
+              <li><a class="dropdown-item" v-if="agent.status == 3" @click="$emit('open-agent-modal', agent)">Edit agent settings</a></li>
+              <li><a class="dropdown-item" v-if="agent.status == 3" @click="$emit('wake-agent', agent.id)">Wake agent</a></li>
+              <li><a class="dropdown-item" style="color: #BB2D3C !important;" v-if="agent.status != 3" @click="$emit('sleep-agent', agent.id)">Send agent to sleep</a></li>
+            </ul>
+          </div>
         </div>
       </template>
 
     </div>
 
-    <div v-if="currentServer != 'home'">
+    <div v-if="currentServer == 'search'">
+      <div :class="{'channel-thumb': true, 'active': (this.currentSearchTab == 0)}" @click="selectSearchTab(0)">
+        <span style="font-weight: 700">Search</span>
+      </div>
+
+      <div :class="{'channel-thumb': true, 'active': (this.currentSearchTab == 1)}" @click="selectSearchTab(1)">
+        <span style="font-weight: 700">Results</span>
+      </div>
+    </div>
+
+    <div v-if="currentServer != 'home' && currentServer != 'search'">
       <div style="
           display: flex;
           flex-direction: row;
@@ -135,6 +157,10 @@ export default {
     };
   },
   props: {
+    currentSearchTab: {
+      type: Number,
+      required: true,
+    },
     agents: {
       type: Object,
       required: true,
@@ -150,7 +176,7 @@ export default {
   },
   watch: {
     currentServer(newServer) {
-      if (newServer !== "home") {
+      if (newServer !== "home" && newServer !== "search") {
         this.fetchChannels(newServer.id);
       }
     },

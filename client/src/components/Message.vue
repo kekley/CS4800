@@ -19,7 +19,7 @@ console.log("Message component received message:", props.message);
   <div :class="['chat-message', { me: isMe }]">
     <div class="container">
       <img class="avatar" :src="message.author.avatar_url" v-if="message.author.type == 'USER'" />
-      <div class="avatar agent" v-if="message.author.type == 'AGENT'">
+      <div :class="{'avatar': true, 'agent-llama': (message.author.model == 'llama3.2'), 'agent-gemma': (message.author.model == 'gemma3')}" v-if="message.author.type == 'AGENT'">
           <i class="bi bi-stars"></i>
       </div>
       <div class="vertical">
