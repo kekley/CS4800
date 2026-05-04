@@ -132,7 +132,7 @@ def update_agent(agentId):
 
     db.session.commit()
 
-    return jsonify(agent.to_dict()), 204
+    return jsonify(agent.to_dict()), 200
 
 @agents_blueprint.route("/<int:agentId>/wake", methods=["POST"])
 @require_auth
