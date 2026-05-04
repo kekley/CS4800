@@ -1,9 +1,14 @@
+import os
+from uuid import uuid4
+
+from constants import UPLOAD_ROOT
 from flask import abort
 from flask_extensions import db
 from models.channel import Channel
 from models.message import Message
 from models.server_member import ServerMember
 from models.agent_member import AgentMember
+from models.message_attachment import MessageAttachment
 from sqlalchemy import select
 
 
@@ -14,7 +19,9 @@ def create_message(
     agent_id: int,
     content: str,
     reply_to_id: int | None = None,
+    attachments: list[dict] | None = None,
 ):
+    attachments = attachments or []
     channel = db.session.get(Channel, channel_id)
     if not channel:
         abort(404, description="channel_not_found")
@@ -52,12 +59,43 @@ def create_message(
         channel_id=channel_id,
         author_id=author_id,
         agent_id=agent_id,
-        content=content,
+        content=content or None,
         reply_to_id=reply_to_id,
     )
 
-    db.session.add(message)
-    db.session.commit()
-    db.session.refresh(message)
+    saved_paths = []
+    try:
+        db.session.add(message)
+        db.session.flush()
+
+        for attachment in attachments:
+            storage_name = f"{uuid4().hex}{attachment['extension']}"
+            file_key = os.path.join(str(channel_id), storage_name)
+            storage_path = os.path.join(UPLOAD_ROOT, file_key)
+            os.makedirs(os.path.dirname(storage_path), exist_ok=True)
+
+            attachment["file"].save(storage_path)
+            saved_paths.append(storage_path)
+
+            db.session.add(
+                MessageAttachment(
+                    message_id=message.id,
+                    file_key=file_key,
+                    file_name=attachment["file_name"],
+                    type=attachment["type"],
+                    size=attachment["size"],
+                )
+            )
+
+        db.session.commit()
+        db.session.refresh(message)
+    except Exception:
+        db.session.rollback()
+        for saved_path in saved_paths:
+            try:
+                os.remove(saved_path)
+            except OSError:
+                pass
+        raise
 
     return message

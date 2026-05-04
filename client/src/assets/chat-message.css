@@ -84,12 +84,43 @@
     border-radius: var(--radius);
     overflow: hidden;
     max-width: 18rem;
+    border: 1px solid var(--panel-border);
 }
 
 .attachment-image img {
     display: block;
     width: 100%;
     height: auto;
+}
+
+.attachment-file {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 20rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+    color: var(--text);
+    text-align: left;
+}
+
+.attachment-file:hover {
+    background: var(--button-hover);
+}
+
+.attachment-file span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-file small {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
 }
 
 .message-text {

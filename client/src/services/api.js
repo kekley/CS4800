@@ -6,8 +6,7 @@ export default () => {
         baseURL: `https://smalltalk.kekley.online`,
         headers: {
             "Accept": "application/json",
-            "Content-Type": "application/json",
         }
     });
-    
+
 }

@@ -43,11 +43,15 @@
     background: var(--panel-bg);
 }
 
+.composer {
+    border-top: 1px solid var(--panel-border);
+    padding: 10px;
+}
+
 .input-area {
     display: flex;
     flex-direction: row;
     min-height: 50px;
-    padding: 10px;
     bottom: 0;
     align-items: start;
 }
@@ -57,15 +61,24 @@
     align-items: center;
     justify-content: center;
     width: 2.7rem;
+    min-width: 2.7rem;
     border-radius: var(--radius);
     cursor: pointer;
-    height: auto;
+    height: 2.7rem;
     margin-top: auto;
     margin-bottom: auto;
+    border: 0;
+    background: transparent;
+    color: var(--text);
 }
 
 .action-button:hover {
     background: var(--button-hover);
+}
+
+.action-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 
 .send-message {
@@ -79,6 +92,87 @@
     max-width: 100% !important;
     max-height: 200px !important;
     margin-right: 10px;
+}
+
+.file-input {
+    display: none;
+}
+
+.selected-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+}
+
+.selected-attachment {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: min(20rem, 100%);
+    padding: 0.45rem;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+}
+
+.selected-attachment-preview,
+.selected-attachment-icon {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.45rem;
+    flex-shrink: 0;
+}
+
+.selected-attachment-preview {
+    object-fit: cover;
+}
+
+.selected-attachment-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--input-bg);
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.selected-attachment-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.selected-attachment-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.selected-attachment-size,
+.upload-error {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.75rem;
+}
+.remove-attachment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+}
+
+.remove-attachment:hover {
+    background: var(--button-hover);
+}
+
+.upload-error {
+    margin: 0 0 0.5rem;
+    color: #ff8f8f;
 }
 
 .text-input {

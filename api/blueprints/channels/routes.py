@@ -1,19 +1,38 @@
-from http.client import HTTPException
+from werkzeug.exceptions import HTTPException
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
 
 from models.agent import Agent
 from auth import require_auth
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify, request, url_for
 from flask_extensions import db, pusher
 
 from models.channel import Channel
 from models.message import Message
 from blueprints.messages.services import create_message
-from blueprints.messages.validation import validate_create_message_payload
+from blueprints.messages.validation import (
+    validate_attachment_files,
+    validate_create_message_payload,
+)
 from models.user import User
 
 channels_blueprint = Blueprint("channels", __name__)
+
+
+def format_attachment(attachment):
+    return {
+        "id": attachment.id,
+        "file_name": attachment.file_name,
+        "type": attachment.type,
+        "size": attachment.size,
+        "url": url_for("messages.get_attachment", attachment_id=attachment.id),
+        "preview_url": url_for(
+            "messages.preview_attachment",
+            attachment_id=attachment.id,
+        ),
+    }
 
 
 def format_message(message_obj, user_obj, channel_id, agent_obj=None):
@@ -24,6 +43,9 @@ def format_message(message_obj, user_obj, channel_id, agent_obj=None):
         "created_at": message_obj.created_at.isoformat(),
         "author": None,
         "reply_to_id": message_obj.reply_to_id,
+        "attachments": [
+            format_attachment(attachment) for attachment in message_obj.attachments
+        ],
     }
 
     if agent_obj is not None:
@@ -43,9 +65,29 @@ def format_message(message_obj, user_obj, channel_id, agent_obj=None):
 @channels_blueprint.route("/<int:channel_id>/messages", methods=["POST"])
 @require_auth
 def post_message(channel_id: int):
-    payload = request.get_json(silent=True)
+    attachments = []
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        uploaded_files = [
+            file_storage
+            for file_storage in request.files.getlist("files")
+            if file_storage and file_storage.filename
+        ]
+        ok, attachments = validate_attachment_files(uploaded_files)
+        if not ok:
+            return jsonify({"error": attachments}), 400
 
-    ok, validated = validate_create_message_payload(payload)
+        payload = {
+            "content": request.form.get("content"),
+            "reply_to_id": request.form.get("reply_to_id"),
+            "agentId": request.form.get("agentId"),
+        }
+    else:
+        payload = request.get_json(silent=True)
+
+    ok, validated = validate_create_message_payload(
+        payload,
+        has_attachments=bool(attachments),
+    )
     if not ok:
         return jsonify({"error": validated}), 400
 
@@ -63,7 +105,7 @@ def post_message(channel_id: int):
     elif g.user.memberships.filter_by(server_id=channel.server_id).first() is None:
         return jsonify({"error": "You are not a member of this server"}), 403
 
-    if validated["reply_to_id"]:
+    if validated["reply_to_id"] is not None:
         parent_message = Message.query.get(validated["reply_to_id"])
         if not parent_message or parent_message.channel_id != channel_id:
             return jsonify({"error": "Invalid reply_to_id"}), 400
@@ -76,6 +118,7 @@ def post_message(channel_id: int):
             agent_id=int(validated["agentId"]) if g.user == "AGENT" else None,
             content=validated["content"],
             reply_to_id=validated["reply_to_id"],
+            attachments=attachments,
         )
     except HTTPException as exc:
         return jsonify({"error": exc.description}), exc.code
@@ -118,6 +161,7 @@ def get_messages(channel_id: int):
 
     messages = db.session.execute(
         select(Message, User, Agent)
+        .options(selectinload(Message.attachments))
         .outerjoin(User, User.id == Message.author_id)
         .outerjoin(Agent, Agent.id == Message.agent_id)
         .where(Message.channel_id == channel_id)

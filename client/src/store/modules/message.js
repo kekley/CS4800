@@ -25,16 +25,32 @@ export default {
         async postMessage({ commit }, data) {
             console.log("Posting message with data:", data);
             try {
+                const headers = {
+                    'Authorization': `Bearer ${data.accessToken}`
+                };
+                let body = {
+                    content: data.payload.content,
+                    reply_to_id: data.payload.replyToMessageId
+                };
+
+                if (data.payload.files && data.payload.files.length > 0) {
+                    body = new FormData();
+                    body.append("content", data.payload.content || "");
+
+                    if (data.payload.replyToMessageId != null) {
+                        body.append("reply_to_id", data.payload.replyToMessageId);
+                    }
+
+                    data.payload.files.forEach((file) => {
+                        body.append("files", file);
+                    });
+                }
+
                 let response = await Api().post(
                     `channels/${data.payload.channelId}/messages`,
+                    body,
                     {
-                        content: data.payload.content,
-                        reply_to_id: data.payload.replyToMessageId
-                    },
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${data.accessToken}`
-                        }
+                        headers
                     }
                 );
                 return response;
