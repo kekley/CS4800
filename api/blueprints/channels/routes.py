@@ -21,8 +21,8 @@ from models.user import User
 channels_blueprint = Blueprint("channels", __name__)
 
 
-def format_attachment(attachment):
-    return {
+def format_attachment(attachment, *, include_extraction=False):
+    data = {
         "id": attachment.id,
         "file_name": attachment.file_name,
         "type": attachment.type,
@@ -34,8 +34,25 @@ def format_attachment(attachment):
         ),
     }
 
+    if include_extraction:
+        data.update(
+            {
+                "extraction_status": attachment.extraction_status,
+                "extracted_text": attachment.extracted_text,
+                "extraction_error": attachment.extraction_error,
+            }
+        )
 
-def format_message(message_obj, user_obj, channel_id, agent_obj=None):
+    return data
+
+
+def format_message(
+    message_obj,
+    user_obj,
+    channel_id,
+    agent_obj=None,
+    include_attachment_extraction=False,
+):
     res = {
         "id": message_obj.id,
         "channel_id": channel_id,
@@ -44,7 +61,11 @@ def format_message(message_obj, user_obj, channel_id, agent_obj=None):
         "author": None,
         "reply_to_id": message_obj.reply_to_id,
         "attachments": [
-            format_attachment(attachment) for attachment in message_obj.attachments
+            format_attachment(
+                attachment,
+                include_extraction=include_attachment_extraction,
+            )
+            for attachment in message_obj.attachments
         ],
     }
 
@@ -200,6 +221,7 @@ def get_recent_message(channel_id: int):
 
     messages = db.session.execute(
         select(Message, User, Agent)
+        .options(selectinload(Message.attachments))
         .outerjoin(User, User.id == Message.author_id)
         .outerjoin(Agent, Agent.id == Message.agent_id)
         .where(Message.channel_id == channel_id)
@@ -213,6 +235,7 @@ def get_recent_message(channel_id: int):
             message.User,
             channel_id,
             agent_obj=message.Agent.to_dict() if message.Agent else None,
+            include_attachment_extraction=True,
         )
         for message in messages
     ]

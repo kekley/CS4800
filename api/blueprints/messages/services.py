@@ -2,6 +2,7 @@ import os
 from uuid import uuid4
 
 from constants import UPLOAD_ROOT
+from blueprints.messages.extraction import extract_attachment_text
 from flask import abort
 from flask_extensions import db
 from models.channel import Channel
@@ -76,6 +77,11 @@ def create_message(
 
             attachment["file"].save(storage_path)
             saved_paths.append(storage_path)
+            extraction = extract_attachment_text(
+                storage_path,
+                attachment["type"],
+                attachment["file_name"],
+            )
 
             db.session.add(
                 MessageAttachment(
@@ -84,6 +90,10 @@ def create_message(
                     file_name=attachment["file_name"],
                     type=attachment["type"],
                     size=attachment["size"],
+                    extraction_status=extraction["status"],
+                    extracted_text=extraction["text"],
+                    extraction_error=extraction["error"],
+                    extracted_at=extraction["extracted_at"],
                 )
             )
 
