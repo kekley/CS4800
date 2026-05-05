@@ -23,11 +23,7 @@ def create_agent(serverId):
     payload = request.get_json()
     owner = g.user
 
-    models = {
-        "llama": "llama3.2",
-        "mistral": "mistral",
-        "gemma": "gemma3"
-    }
+    models = {"llama": "llama3.2", "mistral": "mistral", "gemma": "gemma3"}
 
     name = (
         payload["name"].strip()
@@ -38,51 +34,63 @@ def create_agent(serverId):
         return jsonify({"message": "Name is required"}), 400
     if len(name) > 255:
         return jsonify({"message": "Name must be less than 255 characters"}), 400
-    
+
     model = (
         payload["model"].strip()
         if "model" in payload and isinstance(payload["model"], str)
         else None
     )
     if not model:
-        return jsonify({"message": "Model type is required (Llama, Mistral, Gemma)."}), 400
+        return (
+            jsonify({"message": "Model type is required (Llama, Mistral, Gemma)."}),
+            400,
+        )
     if model.lower() not in ["llama", "mistral", "gemma"]:
-        return jsonify({"message": "Agents only support Llama, Mistral, or Gemma model types."}), 400
-    
+        return (
+            jsonify(
+                {"message": "Agents only support Llama, Mistral, or Gemma model types."}
+            ),
+            400,
+        )
+
     new_agent = Agent(
         name=name,
         userId=owner.id,
         model=models[model.lower()],
-        personality=payload["personality"].strip() if "personality" in payload else None,
-        status=0
+        personality=(
+            payload["personality"].strip() if "personality" in payload else None
+        ),
+        status=0,
     )
     db.session.add(new_agent)
-    db.session.flush() 
+    db.session.flush()
 
-    db.session.add(
-        AgentMember(server_id=serverId, agent_id=new_agent.id)
-    )
+    db.session.add(AgentMember(server_id=serverId, agent_id=new_agent.id))
     db.session.commit()
 
     docker_client.containers.run(
         image="agent-app:latest",
         name=f"agent-{new_agent.id}-{name}",
-        command=["python", "agent.py", "--agentId", str(new_agent.id), "--model", models[model.lower()],],
+        command=[
+            "python",
+            "agent.py",
+            "--agentId",
+            str(new_agent.id),
+            "--model",
+            models[model.lower()],
+        ],
         environment={
             "OLLAMA_HOST": "http://ollama:11434",
         },
         network="agents_default",
-        detach=True,
+        detach=False,
         remove=True,
     )
 
     pusher.trigger(
         channels="agent-control",
         event_name="new-agent",
-        data={
-            "serverId": serverId,
-            "agent": new_agent.to_dict()
-        }
+        data={"serverId": serverId, "agent": new_agent.to_dict()},
     )
 
     return jsonify(new_agent.to_dict()), 201
@@ -94,15 +102,11 @@ def update_agent(agentId):
     agent = Agent.query.get(agentId)
     if not agent:
         return jsonify({"error": "Agent not found"}), 404
-    
+
     if agent.userId != g.user.id:
         return jsonify({"error": "You do not own this agent"}), 403
-    
-    models = {
-        "llama": "llama3.2",
-        "mistral": "mistral",
-        "gemma": "gemma3"
-    }
+
+    models = {"llama": "llama3.2", "mistral": "mistral", "gemma": "gemma3"}
 
     payload = request.get_json()
 
@@ -113,7 +117,7 @@ def update_agent(agentId):
     )
     if name is not None:
         agent.name = name
-    
+
     model = (
         payload["model"].strip()
         if "model" in payload and isinstance(payload["model"], str)
@@ -134,32 +138,37 @@ def update_agent(agentId):
 
     return jsonify(agent.to_dict()), 200
 
+
 @agents_blueprint.route("/<int:agentId>/wake", methods=["POST"])
 @require_auth
 def wake_agent(agentId):
     agent = Agent.query.get(agentId)
     if not agent:
         return jsonify({"error": "Agent not found"}), 404
-    
+
     if agent.status != 3:
         return jsonify({"error": "Agent is alrady awake"}), 400
-    
+
     agent.status = 0
     db.session.commit()
 
     pusher.trigger(
         channels="agent-control",
         event_name="status-change",
-        data={
-            "agentId": agentId,
-            "status": 0
-        }
+        data={"agentId": agentId, "status": 0},
     )
 
     docker_client.containers.run(
         image="agent-app",
         name=f"agent-{agent.id}-{agent.name}",
-        command=["python", "agent.py", "--agentId", str(agent.id), "--model", agent.model],
+        command=[
+            "python",
+            "agent.py",
+            "--agentId",
+            str(agent.id),
+            "--model",
+            agent.model,
+        ],
         environment={
             "OLLAMA_HOST": "http://ollama:11434",
         },
@@ -177,23 +186,20 @@ def sleep_agent(agentId):
     agent = Agent.query.get(agentId)
     if not agent:
         return jsonify({"error": "Agent not found"}), 404
-    
+
     if agent.status == 3:
         return jsonify({"error": "Agent is already asleep"}), 400
-    
+
     agent.status = 3
     db.session.commit()
-    
+
     container = docker_client.containers.get(f"agent-{agent.id}-{agent.name}")
     container.stop()
 
     pusher.trigger(
         channels="agent-control",
         event_name="status-change",
-        data={
-            "agentId": agentId,
-            "status": 3
-        }
+        data={"agentId": agentId, "status": 3},
     )
 
     return "", 204
@@ -205,17 +211,14 @@ def register_agent(agentId):
     agent = Agent.query.get(agentId)
     if not agent:
         return jsonify({"error": "Agent not found"}), 404
-    
+
     agent.status = 1
     db.session.commit()
 
     pusher.trigger(
         channels="agent-control",
         event_name="status-change",
-        data={
-            "agentId": agentId,
-            "status": 1
-        }
+        data={"agentId": agentId, "status": 1},
     )
 
     return "", 204
@@ -227,11 +230,11 @@ def agent_startreply(agentId, channelId):
     agent = Agent.query.get(agentId)
     if not agent:
         return jsonify({"error": "Agent not found"}), 404
-    
+
     channel = Channel.query.get(channelId)
     if not channel:
         return jsonify({"error": "Channel not found"}), 404
-    
+
     agent.status = 2
     agent.typingIn = int(channelId)
     db.session.commit()
@@ -239,11 +242,7 @@ def agent_startreply(agentId, channelId):
     pusher.trigger(
         channels="agent-control",
         event_name="status-change",
-        data={
-            "agentId": agentId,
-            "status": 2,
-            "typingIn": int(channelId)
-        }
+        data={"agentId": agentId, "status": 2, "typingIn": int(channelId)},
     )
 
     return "", 204
@@ -255,31 +254,26 @@ def associate_agent_to_server(agentId, serverId):
     agent = Agent.query.get(agentId)
     if not agent:
         return jsonify({"error": "Agent not found"}), 404
-    
-    db.session.add(
-        AgentMember(server_id=serverId, agent_id=agentId)
-    )
+
+    db.session.add(AgentMember(server_id=serverId, agent_id=agentId))
     db.session.commit()
 
-    channels = db.session.execute(
-        select(Channel)
-        .join(AgentMember, AgentMember.server_id == Channel.server_id)
-        .where(AgentMember.agent_id == agentId)
-        .order_by(Channel.position.asc())
-    ).scalars().all()
-    channel_list = [
-        channel.id
-        for channel in channels
-    ]
+    channels = (
+        db.session.execute(
+            select(Channel)
+            .join(AgentMember, AgentMember.server_id == Channel.server_id)
+            .where(AgentMember.agent_id == agentId)
+            .order_by(Channel.position.asc())
+        )
+        .scalars()
+        .all()
+    )
+    channel_list = [channel.id for channel in channels]
 
     pusher.trigger(
         channels=f"agent-control",
         event_name="membership-added",
-        data={
-            "agentId": agentId,
-            "serverId": serverId,
-            "channels": channel_list
-        }
+        data={"agentId": agentId, "serverId": serverId, "channels": channel_list},
     )
 
     return "", 204
@@ -291,21 +285,20 @@ def get_agent_channels(agentId):
     agent = Agent.query.get(agentId)
     if not agent:
         return jsonify({"error": "Agent not found"}), 404
-    
-    channels = db.session.execute(
-        select(Channel)
-        .join(AgentMember, AgentMember.server_id == Channel.server_id)
-        .where(AgentMember.agent_id == agentId)
-        .order_by(Channel.position.asc())
-    ).scalars().all()
-    channel_list = [
-        channel.id
-        for channel in channels
-    ]
 
-    return jsonify({
-        "channels": channel_list
-    }), 200
+    channels = (
+        db.session.execute(
+            select(Channel)
+            .join(AgentMember, AgentMember.server_id == Channel.server_id)
+            .where(AgentMember.agent_id == agentId)
+            .order_by(Channel.position.asc())
+        )
+        .scalars()
+        .all()
+    )
+    channel_list = [channel.id for channel in channels]
+
+    return jsonify({"channels": channel_list}), 200
 
 
 @agents_blueprint.route("/list", methods=["GET"])
@@ -313,15 +306,13 @@ def get_agent_channels(agentId):
 def list_owned_agents():
     owner = g.user
 
-    agents = db.session.execute(
-        select(Agent)
-        .where(Agent.userId == owner.id)
-    ).scalars().all()
+    agents = (
+        db.session.execute(select(Agent).where(Agent.userId == owner.id))
+        .scalars()
+        .all()
+    )
 
-    res = [
-        agent.to_dict()
-        for agent in agents
-    ]
+    res = [agent.to_dict() for agent in agents]
 
     return jsonify(res), 200
 
@@ -334,3 +325,4 @@ def get_agent_info(agentId):
 
     agent = Agent.query.get(agentId)
     return jsonify(agent.to_dict()), 200
+
