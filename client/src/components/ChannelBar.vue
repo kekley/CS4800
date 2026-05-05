@@ -37,7 +37,7 @@ const selectSearchTab = (searchTab) => {
           background: var(--bg-0);
           padding: 10px;
           color: white;
-          font-family: &quot;Ubuntu&quot;;
+          font-family: 'Ubuntu';
           max-width: 650px !important;
         "
       >

@@ -199,7 +199,6 @@ export default {
         this.pusher.unsubscribe(this.channel.name);
         this.channel = null;
       }
-        
       let response = await this.$store.dispatch("message/fetchMessages", {
         payload: { channelId },
         accessToken: await this.$auth0.getAccessTokenSilently(),
