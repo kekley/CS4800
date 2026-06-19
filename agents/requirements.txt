@@ -1,0 +1,5 @@
+requests>=2.31.0,<3.0.0
+pusher>=3.3.0,<4.0.0
+ollama>=0.4.0,<1.0.0
+pysher>=1.0.8
+python-dotenv>=1.0.1

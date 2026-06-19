@@ -1,30 +1,24 @@
 .chat-message {
     max-width: 80%;
-    margin: 0.35rem 0;
-    padding: 0.75rem;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--card-border);
-    background-color: var(--card-bg);
-}
-
-.chat-message:hover {
-    transform: translateY(-1px);
+    margin: 0;
+    padding: 10px;
 }
 
 .chat-message.me {
     margin-left: auto;
-    background-color: var(--primary);
     border-color: var(--primary-strong);
 }
 
-.chat-message.me:hover {
-    background-color: var(--primary-hover);
+.chat-message:hover {
+    cursor: pointer;
 }
 
 .container {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.75rem;
+    padding: 0px 10px;
+    justify-content: center;
 }
 
 .chat-message.me .container {
@@ -38,6 +32,22 @@
     width: 2.2rem;
     object-fit: cover;
     flex-shrink: 0;
+}
+
+.avatar.agent-llama {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background: linear-gradient(to top right, blue, purple);
+}
+
+.avatar.agent-gemma {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    background: linear-gradient(to top right, orange, red);
 }
 
 .vertical {
@@ -74,12 +84,43 @@
     border-radius: var(--radius);
     overflow: hidden;
     max-width: 18rem;
+    border: 1px solid var(--panel-border);
 }
 
 .attachment-image img {
     display: block;
     width: 100%;
     height: auto;
+}
+
+.attachment-file {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 20rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+    color: var(--text);
+    text-align: left;
+}
+
+.attachment-file:hover {
+    background: var(--button-hover);
+}
+
+.attachment-file span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-file small {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
 }
 
 .message-text {

@@ -1,0 +1,46 @@
+.channel-bar {
+    height: 100%;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+}
+
+.channel-bar.working {
+    align-items: center;
+    justify-content: center;
+}
+
+.channel-thumb {
+    width: 100%;
+    border-radius: 5px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid transparent;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.channel-thumb.active {
+    border: 2px solid var(--primary);
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15), var(--primary));
+}
+
+.presence-indicator {
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.presence-indicator > div {
+    width: 10px; height: 10px;
+}
+
+.presence-indicator > p {
+    margin: 0; margin-left: 10px;
+}
+
+.label {
+    margin: 0; font-weight: 700;
+}
